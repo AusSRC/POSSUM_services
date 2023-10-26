@@ -7,6 +7,9 @@ VALIDATED_STATE = (
 
 PIPELINE_STATE = (
         ('COMPLETED', 'COMPLETED'),
+        ('SUBMITTED', 'SUBMITTED'),
+        ('QUEUED', 'QUEUED'),
+        ('RUNNING', 'RUNNING'),
         ('FAILED', 'FAILED'),
         ('CANCELLED', 'CANCELLED'),)
 
@@ -49,8 +52,10 @@ class Observation(models.Model):
     processed_date = models.DateTimeField(blank=True, null=True)
     validated_date = models.DateTimeField(blank=True, null=True)
     validated_state = models.TextField(blank=True, null=True, choices=VALIDATED_STATE)
-    pipeline_date = models.DateTimeField(blank=True, null=True)
-    pipeline_state = models.TextField(blank=True, null=True, choices=PIPELINE_STATE)
+    mfs_update = models.DateTimeField(blank=True, null=True)
+    mfs_state = models.TextField(blank=True, null=True, choices=PIPELINE_STATE)
+    cube_update = models.DateTimeField(blank=True, null=True)
+    cube_state = models.TextField(blank=True, null=True, choices=PIPELINE_STATE)
 
     def __str__(self):
         return self.name
