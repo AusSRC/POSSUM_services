@@ -1,0 +1,23 @@
+version: '3.5'
+
+services:
+  possum_db:
+    shm_size: '32gb'
+    build:
+       context: .
+       shm_size: '32gb'
+    image: possum_db
+    container_name: possum_db
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - /data:/var/lib/postgresql/data
+    networks:
+      - possum_network
+
+networks:
+  possum_network:
+    name: possum_network
+    driver: bridge
