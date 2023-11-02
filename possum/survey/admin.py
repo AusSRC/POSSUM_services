@@ -19,7 +19,7 @@ class AssociatedTileAdminInline(admin.TabularInline):
 
 class Band1FieldTileAdminInline(admin.TabularInline):
     readonly_fields = ('obs_start', 'sbid', 'processed_date', 'validated_date', 
-                       'validated_state', 'pipeline_date', 'pipeline_state')
+                       'validated_state', 'mfs_update', 'mfs_state', 'cube_update', 'cube_state')
 
     model = FieldTile
 
@@ -59,14 +59,26 @@ class Band1FieldTileAdminInline(admin.TabularInline):
             return '-'
         return val
 
-    def pipeline_date(self, obj):
-        val = obj.name.pipeline_date
+    def mfs_update(self, obj):
+        val = obj.name.mfs_update
         if val is None:
             return '-'
         return val
 
-    def pipeline_state(self, obj):
-        val = obj.name.pipeline_state
+    def mfs_state(self, obj):
+        val = obj.name.mfs_state
+        if val is None:
+            return '-'
+        return val
+
+    def cube_update(self, obj):
+        val = obj.name.cube_update
+        if val is None:
+            return '-'
+        return val
+
+    def cube_state(self, obj):
+        val = obj.name.cube_state
         if val is None:
             return '-'
         return val
@@ -84,7 +96,7 @@ class Band1FieldTileAdminInline(admin.TabularInline):
 
 class Band2FieldTileAdminInline(admin.TabularInline):
     readonly_fields = ('obs_start', 'sbid', 'processed_date', 'validated_date', 
-                       'validated_state', 'pipeline_date', 'pipeline_state')
+                       'validated_state', 'mfs_update', 'mfs_state', 'cube_update', 'cube_state')
 
     model = FieldTile
 
@@ -124,14 +136,26 @@ class Band2FieldTileAdminInline(admin.TabularInline):
             return '-'
         return val
 
-    def pipeline_date(self, obj):
-        val = obj.name.pipeline_date
+    def mfs_update(self, obj):
+        val = obj.name.mfs_update
         if val is None:
             return '-'
         return val
 
-    def pipeline_state(self, obj):
-        val = obj.name.pipeline_state
+    def mfs_state(self, obj):
+        val = obj.name.mfs_state
+        if val is None:
+            return '-'
+        return val
+
+    def cube_update(self, obj):
+        val = obj.name.cube_update
+        if val is None:
+            return '-'
+        return val
+
+    def cube_state(self, obj):
+        val = obj.name.cube_state
         if val is None:
             return '-'
         return val
@@ -151,14 +175,14 @@ class ObservationAdmin(admin.ModelAdmin):
     inlines = [AssociatedTileAdminInline,]
 
     list_display = ('name', 'ra_deg', 'dec_deg', 'band', 'obs_start', 'sbid', 'processed_date', 'validated_date', 
-                    'validated_state', 'pipeline_date', 'pipeline_state')
+                    'validated_state', 'mfs_update', 'mfs_state', 'cube_update', 'cube_state')
 
     readonly_fields = ('name', 'ra_deg', 'dec_deg', 'gl', 'gb', 'rotation', 
                        'duration', 'centrefreq', 'bandwidth', 'footprint', 'band')
 
     fields = ('name', 'ra_deg', 'dec_deg', 'gl', 'gb', 'rotation', 'duration', 'centrefreq', 
               'bandwidth', 'footprint', 'band', 'obs_start', 'sbid', 'processed_date', 'validated_date', 
-              'validated_state', 'pipeline_date', 'pipeline_state')
+              'validated_state', 'mfs_update', 'mfs_state', 'cube_update', 'cube_state')
 
     search_fields = ('name', 
                      'ra_deg', 
@@ -166,7 +190,8 @@ class ObservationAdmin(admin.ModelAdmin):
                      'band', 
                      'sbid',
                      'validated_state',
-                     'pipeline_state',
+                     'mfs_state',
+                     'cube_state',
                      'associatedtile__tile__tile')
 
     can_delete = False
