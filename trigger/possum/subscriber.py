@@ -171,7 +171,7 @@ class Subscriber(object):
 
                 limit = 3 - count
                 UNSCHEDULED_CUBE = f"""SELECT sbid FROM possum.observation WHERE sbid IS NOT NULL 
-                                       AND validated_state='ACCEPTED' AND cube_sent=false order by sbid LIMIT {limit}"""
+                                       AND validated_state in ('GOOD', 'UNCERTAIN') AND cube_sent=false order by sbid LIMIT {limit}"""
 
                 # Get observations that we have not sent
                 results = await d_conn.fetch(UNSCHEDULED_CUBE)
@@ -214,8 +214,9 @@ class Subscriber(object):
 
 
     async def _send_to_queue(self):
-        await self._cube_send()
-        await self._mfs_send()
+        #await self._cube_send()
+        #await self._mfs_send()
+        pass
 
 
     async def consume(self):
@@ -240,6 +241,9 @@ class Subscriber(object):
                     await message.ack()
                     return
 
+                if isinstance(sbid, str):
+                    sbid = sbid.replace('"', '')
+
                 logging.info(f"Updating pipeline details: {sbid}, state: {body['state']}")
 
                 d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
@@ -256,6 +260,9 @@ class Subscriber(object):
                     logging.error(f'sbid parameter does not exist for pipeline id: {body["pipeline_id"]}')
                     await message.ack()
                     return
+
+                if isinstance(sbid, str):
+                    sbid = sbid.replace('"', '')
 
                 logging.info(f"Updating pipeline details: {sbid}, state: {body['state']}")
 
@@ -302,36 +309,84 @@ class Subscriber(object):
         try:
             body = json.loads(message.body)
 
-            # Only interested in EMU, WALLABY, POSSUM project code
+            # Only interested in WALLABY project code
             if body['project_code'] not in ['AS203']:
                 await message.ack()
                 return
 
-            for f, _, _ in body['files']:
+            for f, _, _, quality in body['files']:
                 name = self.extract_name(f)
                 if name is None:
                     continue
 
-                logger.info(f"Match. Field Name: {name}, SBID: {body['sbid']}, Event ID: {body['event_id']}, Event Date: {body['event_date']}, Event Type: {body['event_type']}")
+                if f.startswith('image.restored.i.') and f.endswith('.contcube.conv.fits'):
+                    logger.info(f"Match. Field Name: {name}, "
+                                f"SBID: {body['sbid']}, "
+                                f"Event Type: {body['event_type']}, "
+                                f"Event Date: {body['event_date']}, "
+                                f"Quality: {quality}, "
+                                f"Filename: {f}")
 
-                obs_start = datetime.fromisoformat(body['obs_start'])
-                validated_date = datetime.fromisoformat(body['event_date'])
-                event_type = body['event_type']
+                    event_date = datetime.fromisoformat(body['event_date'])
+                    obs_start = datetime.fromisoformat(body['obs_start'])
+                    event_type = body['event_type']
 
-                if event_type == 'VALIDATED' or event_type == 'RELEASED':
-                    event_type = 'ACCEPTED'
-                elif event_type == 'DEPOSITED':
-                    event_type = None
-                    validated_date = None
+                    # clean the observation entry
+                    if event_type in ['REJECTED']:
+                        async with self.d_pool.acquire() as conn:
+                            async with conn.transaction():
+                                await conn.execute("""
+                                                   UPDATE possum.observation SET 
+                                                   sbid=null,
+                                                   obs_start=null,
+                                                   processed_date=null,
+                                                   validated_date=null,
+                                                   validated_state=$1,
+                                                   mfs_state=null,
+                                                   mfs_update=null,
+                                                   mfs_sent=false,
+                                                   cube_state=null,
+                                                   cube_update=null,
+                                                   cube_sent=false 
+                                                   WHERE name=$2
+                                                   """,
+                                                   quality,
+                                                   name)
 
-                async with self.d_pool.acquire() as conn:
-                    async with conn.transaction():
-                        await conn.execute('UPDATE possum.observation SET sbid=$1, obs_start=$2, validated_date=$3, validated_state=$4 WHERE name=$5',
-                                            int(body['sbid']),
-                                            obs_start,
-                                            validated_date,
-                                            event_type,
-                                            name)
+                    elif event_type in ['DEPOSITED']:
+                        async with self.d_pool.acquire() as conn:
+                            async with conn.transaction():
+                                await conn.execute("""
+                                                    UPDATE possum.observation SET 
+                                                    sbid=$1,
+                                                    obs_start=$2,
+                                                    processed_date=$3,
+                                                    validated_state=$4 
+                                                    WHERE name=$5
+                                                    """,
+                                                    int(body['sbid']),
+                                                    obs_start,
+                                                    event_date,
+                                                    quality,
+                                                    name)
+
+                    elif event_type in ['RELEASED', 'VALIDATED']:
+                        async with self.d_pool.acquire() as conn:
+                            async with conn.transaction():
+                                await conn.execute("""
+                                                    UPDATE possum.observation SET 
+                                                    sbid=$1,
+                                                    obs_start=$2,
+                                                    validated_date=$3,
+                                                    validated_state=$4 
+                                                    WHERE name=$5
+                                                    """,
+                                                    int(body['sbid']),
+                                                    obs_start,
+                                                    event_date,
+                                                    quality,
+                                                    name)
+
             await message.ack()
 
         except PostgresWarning:
