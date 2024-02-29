@@ -218,7 +218,6 @@ class Subscriber(object):
         #await self._mfs_send()
         pass
 
-
     async def consume(self):
         self.loop.create_task(self.state_queue.consume(self.on_state_message, no_ack=False))
         self.loop.create_task(self.casda_queue.consume(self.on_casda_message, no_ack=False))
@@ -251,7 +250,7 @@ class Subscriber(object):
                     await d_conn.execute(Subscriber.UPDATE_MFS_STATE, 
                                         body['state'], 
                                         parser.parse(body['updated']),
-                                        int(sbid))
+                                        sbid)
                     
             elif body['repository'] == 'https://github.com/AusSRC/POSSUM_workflow' and body['main_script'] == 'main.nf':
                 params = json.loads(params)
@@ -271,7 +270,7 @@ class Subscriber(object):
                     await d_conn.execute(Subscriber.UPDATE_CUBE_STATE, 
                                         body['state'], 
                                         parser.parse(body['updated']),
-                                        int(sbid))
+                                        sbid)
 
         finally:
             await message.ack()
@@ -364,7 +363,7 @@ class Subscriber(object):
                                                     validated_state=$4 
                                                     WHERE name=$5
                                                     """,
-                                                    int(body['sbid']),
+                                                    body['sbid'],
                                                     obs_start,
                                                     event_date,
                                                     quality,
@@ -381,7 +380,7 @@ class Subscriber(object):
                                                     validated_state=$4 
                                                     WHERE name=$5
                                                     """,
-                                                    int(body['sbid']),
+                                                    body['sbid'],
                                                     obs_start,
                                                     event_date,
                                                     quality,
