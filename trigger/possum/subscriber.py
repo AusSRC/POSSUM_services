@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class Subscriber(object):
-
     CUBE_SUBMITTED = "SELECT COUNT(*) as count FROM possum.observation WHERE cube_state IN ('SUBMITTED', 'QUEUED', 'RUNNING')"
 
     UPDATE_CUBE_SENT = "UPDATE possum.observation SET cube_sent=true, cube_state='SUBMITTED' WHERE sbid = any($1)"
@@ -23,12 +22,33 @@ class Subscriber(object):
     UPDATE_MFS_SENT = "UPDATE possum.observation SET mfs_sent=True, mfs_state='SUBMITTED' WHERE sbid = any($1)"
     UPDATE_MFS_STATE = 'UPDATE possum.observation SET mfs_state=$1, mfs_update=$2 WHERE sbid=$3'
 
+    COMPLETE_CUBES = """SELECT t1.tile, t2.name, t1.band FROM
+                        (SELECT tile, band, observation.name FROM (observation LEFT JOIN field_tile ON field_tile.name = observation.name) WHERE sbid=$1) t1
+                    INNER JOIN
+                        (SELECT * FROM (
+                            SELECT tile, band, STRING_AGG(name, ',') as name, COUNT(*) FILTER (WHERE cube_state='COMPLETED') AS n_complete, COUNT(*)
+                            FROM (
+                                SELECT tile, field_tile.name, id, sbid, cube_state, band FROM (field_tile LEFT JOIN observation ON field_tile.name = observation.name)
+                            ) GROUP BY tile, band
+                        ) WHERE n_complete=count) t2
+                    ON t1.tile = t2.tile AND t1.band = t2.band;"""
+    COMPLETE_MFS =  """SELECT t1.tile, t2.name, t1.band FROM
+                        (SELECT tile, band, observation.name FROM (observation LEFT JOIN field_tile ON field_tile.name = observation.name) WHERE sbid=$1) t1
+                    INNER JOIN
+                        (SELECT * FROM (
+                            SELECT tile, band, STRING_AGG(name, ',') as name, COUNT(*) FILTER (WHERE mfs_state='COMPLETED') AS n_complete, COUNT(*)
+                            FROM (
+                                SELECT tile, field_tile.name, id, sbid, mfs_state, band FROM (field_tile LEFT JOIN observation ON field_tile.name = observation.name)
+                            ) GROUP BY tile, band
+                        ) WHERE n_complete=count) t2
+                    ON t1.tile = t2.tile AND t1.band = t2.band;"""
+
 
     def __init__(self):
         self.d_dsn = None
         self.d_pool = None
         self.r_conn = None
-        
+
         self.r_running = True
         self.r_task = None
 
@@ -41,9 +61,10 @@ class Subscriber(object):
         # key of the pipeline to submit to scheduler
         self.main = None
         self.mfs = None
+        self.mosaic = None
 
 
-    async def setup(self, d_dsn, r_dsn, username, main, mfs, loop):
+    async def setup(self, d_dsn, r_dsn, username, main, mfs, mosaic, loop):
         self.d_dsn = d_dsn
         # Perform db connection
         self.d_pool = await asyncpg.create_pool(dsn=None, **d_dsn)
@@ -52,6 +73,7 @@ class Subscriber(object):
         # Pipeline key
         self.main = main
         self.mfs = mfs
+        self.mosaic = mosaic
         self.username = username
 
         self.loop = loop
@@ -78,12 +100,12 @@ class Subscriber(object):
 
         ###################### State Exchange ##################
         self.state_exchange = await self.channel.declare_exchange(
-            "aussrc.workflow.state", 
-            ExchangeType.FANOUT, 
+            "aussrc.workflow.state",
+            ExchangeType.FANOUT,
             durable=True)
 
 
-        self.state_queue = await self.channel.declare_queue(name='aussrc.workflow.state.possum', 
+        self.state_queue = await self.channel.declare_queue(name='aussrc.workflow.state.possum',
                                                             durable=True)
 
         await self.state_queue.bind(self.state_exchange)
@@ -116,7 +138,7 @@ class Subscriber(object):
                     return
 
                 limit = 3 - count
-                UNSCHEDULED_MFS = f"""SELECT sbid FROM possum.observation WHERE sbid IS NOT NULL AND 
+                UNSCHEDULED_MFS = f"""SELECT sbid FROM possum.observation WHERE sbid IS NOT NULL AND
                                       validated_state='ACCEPTED' AND mfs_sent=false order by sbid LIMIT {limit}"""
 
                 # Get observations that we have not sent
@@ -141,8 +163,7 @@ class Subscriber(object):
                     logging.info(f"Submitting mfs pipeline: {self.mfs}, sbid: {sbid}")
 
                     # Sending the message
-                    await self.workflow_exchange.publish(message, 
-                                                        routing_key='aussrc.workflow.submit.pull')
+                    await self.workflow_exchange.publish(message, routing_key='aussrc.workflow.submit.pull')
 
                 # update diffuse have been sent
                 await d_conn.execute(Subscriber.UPDATE_MFS_SENT, sbid_list)
@@ -170,7 +191,7 @@ class Subscriber(object):
                     return
 
                 limit = 3 - count
-                UNSCHEDULED_CUBE = f"""SELECT sbid FROM possum.observation WHERE sbid IS NOT NULL 
+                UNSCHEDULED_CUBE = f"""SELECT sbid FROM possum.observation WHERE sbid IS NOT NULL
                                        AND validated_state in ('GOOD', 'UNCERTAIN') AND cube_sent=false order by sbid LIMIT {limit}"""
 
                 # Get observations that we have not sent
@@ -195,8 +216,7 @@ class Subscriber(object):
                     logging.info(f"Submitting cube pipeline: {self.main}, SBID: {sbid}")
 
                     # Sending the message
-                    await self.workflow_exchange.publish(message, 
-                                                        routing_key='aussrc.workflow.submit.pull')
+                    await self.workflow_exchange.publish(message, routing_key='aussrc.workflow.submit.pull')
 
                 # update regions have been sent
                 await d_conn.execute(Subscriber.UPDATE_CUBE_SENT, sbid_list)
@@ -223,10 +243,43 @@ class Subscriber(object):
         self.loop.create_task(self.casda_queue.consume(self.on_casda_message, no_ack=False))
 
 
+    async def _mosaic(self, query, sbid, *args, **kwargs):
+        # Check if new observation completes any hpx tiles
+        d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
+        async with d_conn.transaction():
+            await d_conn.execute('SET search_path TO possum;')
+            results = await d_conn.fetch(query, str(sbid))
+            for r in results:
+                tile_id = str(dict(r)['tile'])
+                obs_ids = str(dict(r)['name'].replace('WALLABY_', '').replace('EMU_', ''))
+                band = int(dict(r)['band'])
+                if (band not in [1, 2]):
+                    raise Exception(f'Band value must be 1 or 2 [band={band}]')
+                tile_params = {
+                    'TILE_ID': tile_id,
+                    'OBS_IDS': obs_ids,
+                    'BAND': band
+                }
+                tile_params.update(kwargs)
+
+                # Publish message to workflow queue
+                logging.info(f"Submitting mosaicking pipeline: {tile_params}")
+                job_params = {
+                    "pipeline_key": self.mosaic,
+                    "username": self.username,
+                    "params": tile_params
+                }
+                message = Message(
+                    json.dumps(job_params).encode(),
+                    delivery_mode=DeliveryMode.PERSISTENT
+                )
+                await self.workflow_exchange.publish(
+                    message, routing_key='aussrc.workflow.submit.pull'
+                )
+
     async def on_state_message(self, message: IncomingMessage):
         try:
             body = json.loads(message.body)
-
             params = body.get('params', 'null')
             if params == 'null':
                 await message.ack()
@@ -245,13 +298,19 @@ class Subscriber(object):
 
                 logging.info(f"Updating pipeline details: {sbid}, state: {body['state']}")
 
+                # Update state
                 d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
                 async with d_conn.transaction():
-                    await d_conn.execute(Subscriber.UPDATE_MFS_STATE, 
-                                        body['state'], 
-                                        parser.parse(body['updated']),
-                                        sbid)
-                    
+                    await d_conn.execute(Subscriber.UPDATE_MFS_STATE,
+                                         body['state'],
+                                         parser.parse(body['updated']),
+                                         sbid)
+
+                # Run mosaic pipeline for MFS
+                if body['state'] == 'COMPLETED':
+                    logging.info(f'Main workflow completed for {sbid}, checking for complete tiles')
+                    self._mosaic(self.COMPLETE_MFS, sbid, SURVEY_COMPONENT='mfs')
+
             elif body['repository'] == 'https://github.com/AusSRC/POSSUM_workflow' and body['main_script'] == 'main.nf':
                 params = json.loads(params)
                 sbid = params.get('SBID', None)
@@ -265,12 +324,18 @@ class Subscriber(object):
 
                 logging.info(f"Updating pipeline details: {sbid}, state: {body['state']}")
 
+                # Update state
                 d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
                 async with d_conn.transaction():
-                    await d_conn.execute(Subscriber.UPDATE_CUBE_STATE, 
-                                        body['state'], 
-                                        parser.parse(body['updated']),
-                                        sbid)
+                    await d_conn.execute(Subscriber.UPDATE_CUBE_STATE,
+                                         body['state'],
+                                         parser.parse(body['updated']),
+                                         sbid)
+
+                # Run mosaic pipeline
+                if body['state'] == 'COMPLETED':
+                    logging.info(f'Main workflow completed for {sbid}, checking for complete tiles')
+                    self._mosaic(self.COMPLETE_CUBES, sbid)
 
         finally:
             await message.ack()
@@ -291,7 +356,7 @@ class Subscriber(object):
 
         if 'image' not in filename:
             return None
-        
+
         index = filename.find("WALLABY")
         if index == -1:
             index = filename.find("EMU")
@@ -300,7 +365,7 @@ class Subscriber(object):
 
         name = filename[index:]
         name = name.split('.')
-    
+
         return name[0]
 
 
@@ -335,7 +400,7 @@ class Subscriber(object):
                         async with self.d_pool.acquire() as conn:
                             async with conn.transaction():
                                 await conn.execute("""
-                                                   UPDATE possum.observation SET 
+                                                   UPDATE possum.observation SET
                                                    sbid=null,
                                                    obs_start=null,
                                                    processed_date=null,
@@ -346,7 +411,7 @@ class Subscriber(object):
                                                    mfs_sent=false,
                                                    cube_state=null,
                                                    cube_update=null,
-                                                   cube_sent=false 
+                                                   cube_sent=false
                                                    WHERE name=$2
                                                    """,
                                                    quality,
@@ -356,11 +421,11 @@ class Subscriber(object):
                         async with self.d_pool.acquire() as conn:
                             async with conn.transaction():
                                 await conn.execute("""
-                                                    UPDATE possum.observation SET 
+                                                    UPDATE possum.observation SET
                                                     sbid=$1,
                                                     obs_start=$2,
                                                     processed_date=$3,
-                                                    validated_state=$4 
+                                                    validated_state=$4
                                                     WHERE name=$5
                                                     """,
                                                     body['sbid'],
@@ -373,11 +438,11 @@ class Subscriber(object):
                         async with self.d_pool.acquire() as conn:
                             async with conn.transaction():
                                 await conn.execute("""
-                                                    UPDATE possum.observation SET 
+                                                    UPDATE possum.observation SET
                                                     sbid=$1,
                                                     obs_start=$2,
                                                     validated_date=$3,
-                                                    validated_state=$4 
+                                                    validated_state=$4
                                                     WHERE name=$5
                                                     """,
                                                     body['sbid'],

@@ -35,14 +35,15 @@ async def main(loop):
              'password': password,
              'database': database}
 
-    r_dsn = parser['Rabbitmq']['dsn']
+    r_dsn = parser['RabbitMQ']['dsn']
 
     main = parser['Pipeline']['main']
     mfs = parser['Pipeline']['mfs']
+    mosaic = parser['Pipeline']['mosaic']
     username = parser['Pipeline']['username']
 
     sub = Subscriber()
-    await sub.setup(d_dsn, r_dsn, username, main, mfs, loop)
+    await sub.setup(d_dsn, r_dsn, username, main, mfs, mosaic, loop)
     await sub.consume()
 
 
