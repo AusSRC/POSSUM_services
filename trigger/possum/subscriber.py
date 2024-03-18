@@ -64,7 +64,7 @@ class Subscriber(object):
         self.mosaic = None
 
 
-    async def setup(self, d_dsn, r_dsn, username, main, mfs, mosaic, loop):
+    async def setup(self, d_dsn, r_dsn, username, main, mfs, mosaic, loop, dry_run=False):
         self.d_dsn = d_dsn
         # Perform db connection
         self.d_pool = await asyncpg.create_pool(dsn=None, **d_dsn)
@@ -77,6 +77,7 @@ class Subscriber(object):
         self.username = username
 
         self.loop = loop
+        self.dry_run = dry_run
 
         # Creating channel to exchange
         self.channel = await self.r_conn.channel()
@@ -163,10 +164,12 @@ class Subscriber(object):
                     logging.info(f"Submitting mfs pipeline: {self.mfs}, sbid: {sbid}")
 
                     # Sending the message
-                    await self.workflow_exchange.publish(message, routing_key='aussrc.workflow.submit.pull')
+                    if not self.dry_run:
+                        await self.workflow_exchange.publish(message, routing_key='aussrc.workflow.submit.pull')
 
                 # update diffuse have been sent
-                await d_conn.execute(Subscriber.UPDATE_MFS_SENT, sbid_list)
+                if not self.dry_run:
+                    await d_conn.execute(Subscriber.UPDATE_MFS_SENT, sbid_list)
 
         except Exception as e:
             logger.error("_mfs_send: ", exc_info=True)
@@ -216,10 +219,12 @@ class Subscriber(object):
                     logging.info(f"Submitting cube pipeline: {self.main}, SBID: {sbid}")
 
                     # Sending the message
-                    await self.workflow_exchange.publish(message, routing_key='aussrc.workflow.submit.pull')
+                    if not self.dry_run:
+                        await self.workflow_exchange.publish(message, routing_key='aussrc.workflow.submit.pull')
 
                 # update regions have been sent
-                await d_conn.execute(Subscriber.UPDATE_CUBE_SENT, sbid_list)
+                if not self.dry_run:
+                    await d_conn.execute(Subscriber.UPDATE_CUBE_SENT, sbid_list)
 
         except Exception as e:
             logger.error("_cube_send: ", exc_info=True)
@@ -273,16 +278,18 @@ class Subscriber(object):
                     json.dumps(job_params).encode(),
                     delivery_mode=DeliveryMode.PERSISTENT
                 )
-                await self.workflow_exchange.publish(
-                    message, routing_key='aussrc.workflow.submit.pull'
-                )
+                if not self.dry_run:
+                    await self.workflow_exchange.publish(
+                        message, routing_key='aussrc.workflow.submit.pull'
+                    )
 
     async def on_state_message(self, message: IncomingMessage):
         try:
             body = json.loads(message.body)
             params = body.get('params', 'null')
             if params == 'null':
-                await message.ack()
+                if not self.dry_run:
+                    await message.ack()
                 return
 
             if body['repository'] == 'https://github.com/AusSRC/POSSUM_workflow' and body['main_script'] == 'mfs.nf':
@@ -290,7 +297,8 @@ class Subscriber(object):
                 sbid = params.get('SBID', None)
                 if not sbid:
                     logging.error(f'sbid parameter does not exist for pipeline id: {body["pipeline_id"]}')
-                    await message.ack()
+                    if not self.dry_run:
+                        await message.ack()
                     return
 
                 if isinstance(sbid, str):
@@ -301,22 +309,25 @@ class Subscriber(object):
                 # Update state
                 d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
                 async with d_conn.transaction():
-                    await d_conn.execute(Subscriber.UPDATE_MFS_STATE,
-                                         body['state'],
-                                         parser.parse(body['updated']),
-                                         sbid)
+                    if not self.dry_run:
+                        await d_conn.execute(Subscriber.UPDATE_MFS_STATE,
+                                            body['state'],
+                                            parser.parse(body['updated']),
+                                            sbid)
 
                 # Run mosaic pipeline for MFS
                 if body['state'] == 'COMPLETED':
                     logging.info(f'Main workflow completed for {sbid}, checking for complete tiles')
-                    self._mosaic(self.COMPLETE_MFS, sbid, SURVEY_COMPONENT='mfs')
+                    if not self.dry_run:
+                        self._mosaic(self.COMPLETE_MFS, sbid, SURVEY_COMPONENT='mfs')
 
             elif body['repository'] == 'https://github.com/AusSRC/POSSUM_workflow' and body['main_script'] == 'main.nf':
                 params = json.loads(params)
                 sbid = params.get('SBID', None)
                 if not sbid:
                     logging.error(f'sbid parameter does not exist for pipeline id: {body["pipeline_id"]}')
-                    await message.ack()
+                    if not self.dry_run:
+                        await message.ack()
                     return
 
                 if isinstance(sbid, str):
@@ -327,18 +338,23 @@ class Subscriber(object):
                 # Update state
                 d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
                 async with d_conn.transaction():
-                    await d_conn.execute(Subscriber.UPDATE_CUBE_STATE,
-                                         body['state'],
-                                         parser.parse(body['updated']),
-                                         sbid)
+                    if not self.dry_run:
+                        await d_conn.execute(Subscriber.UPDATE_CUBE_STATE,
+                                            body['state'],
+                                            parser.parse(body['updated']),
+                                            sbid)
 
                 # Run mosaic pipeline
                 if body['state'] == 'COMPLETED':
                     logging.info(f'Main workflow completed for {sbid}, checking for complete tiles')
-                    self._mosaic(self.COMPLETE_CUBES, sbid)
+                    if not self.dry_run:
+                        self._mosaic(self.COMPLETE_CUBES, sbid)
 
         finally:
-            await message.ack()
+            if not self.dry_run:
+                await message.ack()
+            else:
+                await message.nack()
 
 
     def extract_name(self, filename):
@@ -396,7 +412,7 @@ class Subscriber(object):
                     event_type = body['event_type']
 
                     # clean the observation entry
-                    if event_type in ['REJECTED']:
+                    if event_type in ['REJECTED'] and not self.dry_run:
                         async with self.d_pool.acquire() as conn:
                             async with conn.transaction():
                                 await conn.execute("""
@@ -417,7 +433,7 @@ class Subscriber(object):
                                                    quality,
                                                    name)
 
-                    elif event_type in ['DEPOSITED']:
+                    elif event_type in ['DEPOSITED'] and not self.dry_run:
                         async with self.d_pool.acquire() as conn:
                             async with conn.transaction():
                                 await conn.execute("""
@@ -434,7 +450,7 @@ class Subscriber(object):
                                                     quality,
                                                     name)
 
-                    elif event_type in ['RELEASED', 'VALIDATED']:
+                    elif event_type in ['RELEASED', 'VALIDATED'] and not self.dry_run:
                         async with self.d_pool.acquire() as conn:
                             async with conn.transaction():
                                 await conn.execute("""
@@ -451,7 +467,10 @@ class Subscriber(object):
                                                     quality,
                                                     name)
 
-            await message.ack()
+            if not self.dry_run:
+                await message.ack()
+            else:
+                await message.nack()
 
         except PostgresWarning:
             logger.error("on_casda_message", exc_info=True)
