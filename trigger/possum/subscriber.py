@@ -570,7 +570,6 @@ class Subscriber(object):
                     'BAND': band
                 }
                 tile_params.update(kwargs)
-                logging.info(tile_params)
 
                 logging.info(f"Submitting mosaicking pipeline: {tile_params}")
                 job_params = {
@@ -588,4 +587,3 @@ class Subscriber(object):
                     )
 
         logging.info('Submitted all available mosaic pipeline jobs.')
-        self.loop.close()
