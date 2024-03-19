@@ -379,6 +379,50 @@ class Subscriber(object):
                     if not self.dry_run:
                         self._mosaic(self.COMPLETE_CUBES, sbid)
 
+            elif body['repository'] == 'https://github.com/AusSRC/POSSUM_workflow' and body['main_script'] == 'mosaic.nf':
+                state = parser.parse(body['updated'])
+                params = json.loads(params)
+                survey_component = params.get('SURVEY_COMPONENT', None)
+                tile_id = params.get('TILE_ID', None)
+                band = params.get('BAND', None)
+                if not tile_id or not band:
+                    logging.error(f'Parameters {dict(params)} invalid for mosaicking pipeline id: {body["pipeline_id"]}')
+                    if not self.dry_run:
+                        await message.ack()
+                    return
+
+                d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
+                # cube
+                if not survey_component:
+                    if not self.dry_run:
+                        if band == 1:
+                            await d_conn.execute('UPDATE possum.tile SET band1_cube_state=$1 WHERE tile=$2;',
+                                state, tile_id
+                            )
+                        elif band == 2:
+                            await d_conn.execute(
+                                'UPDATE possum.tile SET band2_cube_state=$1 WHERE tile=$2;',
+                                state, tile_id
+                            )
+                # mfs
+                elif survey_component == 'mfs':
+                    if not self.dry_run:
+                        if band == 1:
+                            await d_conn.execute(
+                                'UPDATE possum.tile SET band1_mfs_state=$1 WHERE tile=$2;',
+                                state, tile_id
+                            )
+                        elif band == 2:
+                            await d_conn.execute(
+                                'UPDATE possum.tile SET band2_mfs_state=$1 WHERE tile=$2;',
+                                state, tile_id
+                            )
+                else:
+                    logging.error(f'Unexpected survey component parameter {survey_component}')
+                    if not self.dry_run:
+                        await message.ack()
+                    return
+
         finally:
             if not self.dry_run:
                 await message.ack()
@@ -539,7 +583,6 @@ class Subscriber(object):
                     'SURVEY_COMPONENT': 'mfs'
                 }
                 tile_params.update(kwargs)
-                logging.info(tile_params)
 
                 logging.info(f"Submitting mosaicking pipeline: {tile_params}")
                 job_params = {
@@ -587,3 +630,4 @@ class Subscriber(object):
                     )
 
         logging.info('Submitted all available mosaic pipeline jobs.')
+        return
