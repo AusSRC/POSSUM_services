@@ -6,6 +6,19 @@ from django.db.models import Q, Count, Case, When, BooleanField
 from .models import Observation, AssociatedTile, FieldTile, Tile
 
 
+def pipeline_state_colour(state):
+    colour = 'DodgerBlue'
+    if state == 'PENDING':
+        colour = 'orange'
+    elif state == 'RUNNING':
+        colour = 'SlateBlue'
+    elif state == 'COMPLETED':
+        colour = 'limegreen'
+    elif state == 'FAILED':
+        colour = 'Tomato'
+    return colour
+
+
 class AssociatedTileAdminInline(admin.TabularInline):
     model = AssociatedTile
 
@@ -21,7 +34,7 @@ class AssociatedTileAdminInline(admin.TabularInline):
 
 
 class Band1FieldTileAdminInline(admin.TabularInline):
-    readonly_fields = ('obs_start', 'sbid', 'processed_date', 'validated_date', 
+    readonly_fields = ('obs_start', 'sbid', 'processed_date', 'validated_date',
                        'validated_state', 'mfs_update', 'mfs_state', 'cube_update', 'cube_state')
 
     model = FieldTile
@@ -98,7 +111,7 @@ class Band1FieldTileAdminInline(admin.TabularInline):
 
 
 class Band2FieldTileAdminInline(admin.TabularInline):
-    readonly_fields = ('obs_start', 'sbid', 'processed_date', 'validated_date', 
+    readonly_fields = ('obs_start', 'sbid', 'processed_date', 'validated_date',
                        'validated_state', 'mfs_update', 'mfs_state', 'cube_update', 'cube_state')
 
     model = FieldTile
@@ -178,21 +191,21 @@ class ObservationAdmin(admin.ModelAdmin):
     inlines = [AssociatedTileAdminInline,]
     ordering = ('mfs_state', 'cube_state', 'name')
 
-    list_display = ('name', 'ra_deg', 'dec_deg', 'band', 'obs_start', 'sbid', 'processed_date', 'validated_date', 
+    list_display = ('name', 'ra_deg', 'dec_deg', 'band', 'obs_start', 'sbid', 'processed_date', 'validated_date',
                     'validated_state', 'colour_mfs_state', 'mfs_update', 'colour_cube_state', 'cube_update',)
 
-    readonly_fields = ('name', 'ra_deg', 'dec_deg', 'gl', 'gb', 'rotation', 
-                       'duration', 'centrefreq', 'bandwidth', 'footprint', 'band','obs_start', 'sbid', 'processed_date', 'validated_date', 
+    readonly_fields = ('name', 'ra_deg', 'dec_deg', 'gl', 'gb', 'rotation',
+                       'duration', 'centrefreq', 'bandwidth', 'footprint', 'band','obs_start', 'sbid', 'processed_date', 'validated_date',
                        'validated_state', 'mfs_update', 'mfs_state', 'cube_update', 'cube_state')
 
-    fields = ('name', 'ra_deg', 'dec_deg', 'gl', 'gb', 'rotation', 'duration', 'centrefreq', 
-              'bandwidth', 'footprint', 'band', 'obs_start', 'sbid', 'processed_date', 'validated_date', 
+    fields = ('name', 'ra_deg', 'dec_deg', 'gl', 'gb', 'rotation', 'duration', 'centrefreq',
+              'bandwidth', 'footprint', 'band', 'obs_start', 'sbid', 'processed_date', 'validated_date',
               'validated_state', 'mfs_state', 'mfs_update', 'cube_state', 'cube_update',)
 
-    search_fields = ('name', 
-                     'ra_deg', 
-                     'dec_deg', 
-                     'band', 
+    search_fields = ('name',
+                     'ra_deg',
+                     'dec_deg',
+                     'band',
                      'sbid',
                      'validated_state',
                      'mfs_state',
@@ -207,18 +220,9 @@ class ObservationAdmin(admin.ModelAdmin):
         state = obj.mfs_state
         if state is None:
             return '-'
-        colour = 'DodgerBlue'
-        if state == 'PENDING':
-            colour = 'orange'
-        elif state == 'RUNNING':
-            colour = 'SlateBlue'
-        elif state == 'COMPLETED':
-            colour = 'limegreen'
-        elif state == 'FAILED':
-            colour = 'Tomato'
-
+        colour = pipeline_state_colour(state)
         return format_html('<span style="color: {};">{}</span>',
-                           colour, 
+                           colour,
                            obj.mfs_state)
 
     colour_mfs_state.admin_order_field = 'mfs_state'
@@ -228,18 +232,9 @@ class ObservationAdmin(admin.ModelAdmin):
         state = obj.cube_state
         if state is None:
             return '-'
-        colour = 'DodgerBlue'
-        if state == 'PENDING':
-            colour = 'orange'
-        elif state == 'RUNNING':
-            colour = 'SlateBlue'
-        elif state == 'COMPLETED':
-            colour = 'limegreen'
-        elif state == 'FAILED':
-            colour = 'Tomato'
-
+        colour = pipeline_state_colour(state)
         return format_html('<span style="color: {};">{}</span>',
-                           colour, 
+                           colour,
                            obj.cube_state)
 
     colour_cube_state.admin_order_field = 'cube_state'
@@ -252,21 +247,24 @@ class ObservationAdmin(admin.ModelAdmin):
 class TileAdmin(admin.ModelAdmin):
     inlines = [Band1FieldTileAdminInline, Band2FieldTileAdminInline,]
 
-    #list_display = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb', 'band1_count', 'band1_mfs_complete', 'band1_cube_complete', 
+    #list_display = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb', 'band1_count', 'band1_mfs_complete', 'band1_cube_complete',
     #                'oned_pipeline_main_band1', 'oned_pipeline_borders_band1', 'threed_pipeline_band1',
     #                'oned_pipeline_main_band2', 'oned_pipeline_borders_band2', 'threed_pipeline_band2')
-    list_display = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb', 
+    list_display = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb',
                     'band1_count', 'band1_mfs_complete', 'band1_cube_complete',
-                    'band2_count', 'band2_mfs_complete', 'band2_cube_complete')
-    
+                    'band2_count', 'band2_mfs_complete', 'band2_cube_complete',
+                    'band1_cube_state', 'band1_mfs_state', 'band2_mfs_state', 'band2_cube_state'
+                   )
+
+
     readonly_fields = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb')
     #fields = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb', 'oned_pipeline_main_band1', 'oned_pipeline_borders_band1', 'threed_pipeline_band1',
     #         'oned_pipeline_main_band2', 'oned_pipeline_borders_band2', 'threed_pipeline_band2')
 
     fields = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb')
 
-    search_fields = ('tile', 
-                     'ra_deg', 
+    search_fields = ('tile',
+                     'ra_deg',
                      'dec_deg',
                      'associatedtile__name__name')
 
@@ -277,24 +275,73 @@ class TileAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+    def band1_cube_state(self, obj):
+        state = obj.band1_cube_state
+        if state is None:
+            return '-'
+        colour = pipeline_state_colour(state)
+        return format_html('<span style="color: {};">{}</span>',
+                           colour,
+                           obj.band1_cube_state)
+
+    band1_cube_state.admin_order_field = 'band1_cube_state'
+    band1_cube_state.short_description = 'band 1 cube tile state'
+
+    def band1_mfs_state(self, obj):
+        state = obj.band1_mfs_state
+        if state is None:
+            return '-'
+        colour = pipeline_state_colour(state)
+        return format_html('<span style="color: {};">{}</span>',
+                           colour,
+                           obj.band1_mfs_state)
+
+    band1_mfs_state.admin_order_field = 'band1_mfs_state'
+    band1_mfs_state.short_description = 'band 1 mfs tile state'
+
+    def band2_cube_state(self, obj):
+        state = obj.band2_cube_state
+        if state is None:
+            return '-'
+        colour = pipeline_state_colour(state)
+        return format_html('<span style="color: {};">{}</span>',
+                           colour,
+                           obj.band2_cube_state)
+
+    band2_cube_state.admin_order_field = 'band2_cube_state'
+    band2_cube_state.short_description = 'band 2 cube tile state'
+
+
+    def band2_mfs_state(self, obj):
+        state = obj.band2_mfs_state
+        if state is None:
+            return '-'
+        colour = pipeline_state_colour(state)
+        return format_html('<span style="color: {};">{}</span>',
+                           colour,
+                           obj.band2_mfs_state)
+
+    band2_mfs_state.admin_order_field = 'band2_mfs_state'
+    band2_mfs_state.short_description = 'band 2 mfs tile state'
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         qs = qs.annotate(
-            band1_count=Count('fieldtile', 
+            band1_count=Count('fieldtile',
                               filter=Q(fieldtile__name__band=1))).order_by('band1_count')
         qs = qs.annotate(
             band1_mfs_complete=Case(
-                When(band1_count=Count('fieldtile', 
-                                        filter=Q(fieldtile__name__band=1, 
+                When(band1_count=Count('fieldtile',
+                                        filter=Q(fieldtile__name__band=1,
                                         fieldtile__name__mfs_state='COMPLETED')), then=True),
                 default=False,
                 output_field=BooleanField()
             )).order_by('-band1_mfs_complete')
-            
+
         qs = qs.annotate(
             band1_cube_complete=Case(
-                When(band1_count=Count('fieldtile', 
-                                        filter=Q(fieldtile__name__band=1, 
+                When(band1_count=Count('fieldtile',
+                                        filter=Q(fieldtile__name__band=1,
                                         fieldtile__name__cube_state='COMPLETED')), then=True),
                 default=False,
                 output_field=BooleanField()
@@ -302,21 +349,21 @@ class TileAdmin(admin.ModelAdmin):
 
 
         qs = qs.annotate(
-            band2_count=Count('fieldtile', 
+            band2_count=Count('fieldtile',
                               filter=Q(fieldtile__name__band=2))).order_by('band2_count')
         qs = qs.annotate(
             band2_mfs_complete=Case(
-                When(band2_count=Count('fieldtile', 
-                                        filter=Q(fieldtile__name__band=2, 
+                When(band2_count=Count('fieldtile',
+                                        filter=Q(fieldtile__name__band=2,
                                         fieldtile__name__mfs_state='COMPLETED')), then=True),
                 default=False,
                 output_field=BooleanField()
             )).order_by('-band2_mfs_complete')
-            
+
         qs = qs.annotate(
             band2_cube_complete=Case(
-                When(band1_count=Count('fieldtile', 
-                                        filter=Q(fieldtile__name__band=2, 
+                When(band1_count=Count('fieldtile',
+                                        filter=Q(fieldtile__name__band=2,
                                         fieldtile__name__cube_state='COMPLETED')), then=True),
                 default=False,
                 output_field=BooleanField()

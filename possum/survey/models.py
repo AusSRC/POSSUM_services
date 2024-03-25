@@ -77,7 +77,10 @@ class Tile(models.Model):
     oned_pipeline_main_band2 = models.DateTimeField(db_column='1d_pipeline_main_band2', blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
     oned_pipeline_borders_band2 = models.DateTimeField(db_column='1d_pipeline_borders_band2', blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
     threed_pipeline_band2 = models.DateTimeField(db_column='3d_pipeline_band2', blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
-
+    band1_cube_state = models.TextField(blank=True, null=True)
+    band1_mfs_state = models.TextField(blank=True, null=True)
+    band2_mfs_state = models.TextField(blank=True, null=True)
+    band2_cube_state = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return str(self.tile)
@@ -85,4 +88,3 @@ class Tile(models.Model):
     class Meta:
         managed = False
         db_table = 'tile'
-        
