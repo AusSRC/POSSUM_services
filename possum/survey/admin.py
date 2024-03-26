@@ -253,7 +253,8 @@ class TileAdmin(admin.ModelAdmin):
     list_display = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb',
                     'band1_count', 'band1_mfs_complete', 'band1_cube_complete',
                     'band2_count', 'band2_mfs_complete', 'band2_cube_complete',
-                    'band1_cube_state', 'band1_mfs_state', 'band2_mfs_state', 'band2_cube_state'
+                    'colour_band1_mfs_state', 'colour_band1_cube_state',
+                    'colour_band2_mfs_state', 'colour_band2_cube_state'
                    )
 
 
@@ -261,7 +262,7 @@ class TileAdmin(admin.ModelAdmin):
     #fields = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb', 'oned_pipeline_main_band1', 'oned_pipeline_borders_band1', 'threed_pipeline_band1',
     #         'oned_pipeline_main_band2', 'oned_pipeline_borders_band2', 'threed_pipeline_band2')
 
-    fields = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb')
+    fields = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb', 'band1_mfs_state', 'band1_cube_state', 'band2_mfs_state', 'band2_cube_state',)
 
     search_fields = ('tile',
                      'ra_deg',
@@ -275,7 +276,7 @@ class TileAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
-    def band1_cube_state(self, obj):
+    def colour_band1_cube_state(self, obj):
         state = obj.band1_cube_state
         if state is None:
             return '-'
@@ -284,10 +285,10 @@ class TileAdmin(admin.ModelAdmin):
                            colour,
                            obj.band1_cube_state)
 
-    band1_cube_state.admin_order_field = 'band1_cube_state'
-    band1_cube_state.short_description = 'band 1 cube tile state'
+    colour_band1_cube_state.admin_order_field = 'band1_cube_state'
+    colour_band1_cube_state.short_description = 'band 1 cube tile state'
 
-    def band1_mfs_state(self, obj):
+    def colour_band1_mfs_state(self, obj):
         state = obj.band1_mfs_state
         if state is None:
             return '-'
@@ -296,10 +297,10 @@ class TileAdmin(admin.ModelAdmin):
                            colour,
                            obj.band1_mfs_state)
 
-    band1_mfs_state.admin_order_field = 'band1_mfs_state'
-    band1_mfs_state.short_description = 'band 1 mfs tile state'
+    colour_band1_mfs_state.admin_order_field = 'band1_mfs_state'
+    colour_band1_mfs_state.short_description = 'band 1 mfs tile state'
 
-    def band2_cube_state(self, obj):
+    def colour_band2_cube_state(self, obj):
         state = obj.band2_cube_state
         if state is None:
             return '-'
@@ -308,11 +309,11 @@ class TileAdmin(admin.ModelAdmin):
                            colour,
                            obj.band2_cube_state)
 
-    band2_cube_state.admin_order_field = 'band2_cube_state'
-    band2_cube_state.short_description = 'band 2 cube tile state'
+    colour_band2_cube_state.admin_order_field = 'band2_cube_state'
+    colour_band2_cube_state.short_description = 'band 2 cube tile state'
 
 
-    def band2_mfs_state(self, obj):
+    def colour_band2_mfs_state(self, obj):
         state = obj.band2_mfs_state
         if state is None:
             return '-'
@@ -321,8 +322,8 @@ class TileAdmin(admin.ModelAdmin):
                            colour,
                            obj.band2_mfs_state)
 
-    band2_mfs_state.admin_order_field = 'band2_mfs_state'
-    band2_mfs_state.short_description = 'band 2 mfs tile state'
+    colour_band2_mfs_state.admin_order_field = 'band2_mfs_state'
+    colour_band2_mfs_state.short_description = 'band 2 mfs tile state'
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
