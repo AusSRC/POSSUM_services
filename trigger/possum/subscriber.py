@@ -22,7 +22,8 @@ class Subscriber(object):
     UPDATE_MFS_SENT = "UPDATE possum.observation SET mfs_sent=True, mfs_state='SUBMITTED' WHERE sbid = any($1)"
     UPDATE_MFS_STATE = 'UPDATE possum.observation SET mfs_state=$1, mfs_update=$2 WHERE sbid=$3'
 
-    COMPLETE_CUBES = """SELECT t1.tile, t2.name, t1.band FROM
+    COMPLETE_CUBES = """
+                    SELECT t1.tile, t2.name, t1.band, t.band1_cube_state, t.band2_cube_state FROM
                         (SELECT tile, band, observation.name FROM (observation LEFT JOIN field_tile ON field_tile.name = observation.name) WHERE sbid=$1) t1
                     INNER JOIN
                         (SELECT * FROM (
@@ -31,8 +32,13 @@ class Subscriber(object):
                                 SELECT tile, field_tile.name, id, sbid, cube_state, band FROM (field_tile LEFT JOIN observation ON field_tile.name = observation.name)
                             ) GROUP BY tile, band
                         ) WHERE n_complete=count) t2
-                    ON t1.tile = t2.tile AND t1.band = t2.band;"""
-    COMPLETE_MFS =  """SELECT t1.tile, t2.name, t1.band FROM
+                        ON t1.tile = t2.tile AND t1.band = t2.band
+                    LEFT JOIN tile t ON t1.tile = t.tile WHERE (
+                        t.band1_cube_state != 'COMPLETED' OR t.band2_cube_state != 'COMPLETED'
+                    );
+                    """
+    COMPLETE_MFS =  """
+                    SELECT t1.tile, t2.name, t1.band, t.band1_mfs_state, t.band2_mfs_state FROM
                         (SELECT tile, band, observation.name FROM (observation LEFT JOIN field_tile ON field_tile.name = observation.name) WHERE sbid=$1) t1
                     INNER JOIN
                         (SELECT * FROM (
@@ -41,7 +47,11 @@ class Subscriber(object):
                                 SELECT tile, field_tile.name, id, sbid, mfs_state, band FROM (field_tile LEFT JOIN observation ON field_tile.name = observation.name)
                             ) GROUP BY tile, band
                         ) WHERE n_complete=count) t2
-                    ON t1.tile = t2.tile AND t1.band = t2.band;"""
+                        ON t1.tile = t2.tile AND t1.band = t2.band
+                    LEFT JOIN tile t ON t1.tile = t.tile WHERE (
+                        t.band1_mfs_state != 'COMPLETED' OR t.band2_mfs_state != 'COMPLETED'
+                    );
+                    """
 
     COMPLETE_TILES = """
         SELECT tile, obs, band, band1_cube_state, band2_cube_state FROM
@@ -317,17 +327,14 @@ class Subscriber(object):
             body = json.loads(message.body)
             params = body.get('params', 'null')
             if params == 'null':
-                if not self.dry_run:
-                    await message.ack()
                 return
 
             if body['repository'] == 'https://github.com/AusSRC/POSSUM_workflow' and body['main_script'] == 'mfs.nf':
+                logging.info(f'POSSUM mfs.nf state change message: {params}')
                 params = json.loads(params)
                 sbid = params.get('SBID', None)
                 if not sbid:
                     logging.error(f'sbid parameter does not exist for pipeline id: {body["pipeline_id"]}')
-                    if not self.dry_run:
-                        await message.ack()
                     return
 
                 if isinstance(sbid, str):
@@ -351,12 +358,11 @@ class Subscriber(object):
                         self._mosaic(self.COMPLETE_MFS, sbid, SURVEY_COMPONENT='mfs')
 
             elif body['repository'] == 'https://github.com/AusSRC/POSSUM_workflow' and body['main_script'] == 'main.nf':
+                logging.info(f'POSSUM main.nf state change message: {params}')
                 params = json.loads(params)
                 sbid = params.get('SBID', None)
                 if not sbid:
                     logging.error(f'sbid parameter does not exist for pipeline id: {body["pipeline_id"]}')
-                    if not self.dry_run:
-                        await message.ack()
                     return
 
                 if isinstance(sbid, str):
@@ -380,54 +386,70 @@ class Subscriber(object):
                         self._mosaic(self.COMPLETE_CUBES, sbid)
 
             elif body['repository'] == 'https://github.com/AusSRC/POSSUM_workflow' and body['main_script'] == 'mosaic.nf':
-                state = parser.parse(body['updated'])
+                state = parser.parse(body['state'])
                 params = json.loads(params)
                 survey_component = params.get('SURVEY_COMPONENT', None)
                 tile_id = params.get('TILE_ID', None)
                 band = params.get('BAND', None)
                 if not tile_id or not band:
                     logging.error(f'Parameters {dict(params)} invalid for mosaicking pipeline id: {body["pipeline_id"]}')
-                    if not self.dry_run:
-                        await message.ack()
                     return
 
-                d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
                 # cube
-                if not survey_component:
+                if survey_component == 'survey':
+                    logging.info(f'Updating POSSUM MFS tile {tile_id} band {band} with state={state}')
                     if not self.dry_run:
                         if band == 1:
+                            d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
                             await d_conn.execute('UPDATE possum.tile SET band1_cube_state=$1 WHERE tile=$2;',
                                 state, tile_id
                             )
                         elif band == 2:
+                            d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
                             await d_conn.execute(
                                 'UPDATE possum.tile SET band2_cube_state=$1 WHERE tile=$2;',
                                 state, tile_id
                             )
                 # mfs
                 elif survey_component == 'mfs':
+                    logging.info(f'Updating POSSUM cube tile {tile_id} band {band} with state={state}')
                     if not self.dry_run:
                         if band == 1:
+                            d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
                             await d_conn.execute(
                                 'UPDATE possum.tile SET band1_mfs_state=$1 WHERE tile=$2;',
                                 state, tile_id
                             )
                         elif band == 2:
+                            d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
                             await d_conn.execute(
                                 'UPDATE possum.tile SET band2_mfs_state=$1 WHERE tile=$2;',
                                 state, tile_id
                             )
                 else:
                     logging.error(f'Unexpected survey component parameter {survey_component}')
-                    if not self.dry_run:
-                        await message.ack()
                     return
 
-        finally:
             if not self.dry_run:
                 await message.ack()
             else:
                 await message.nack()
+
+        except PostgresWarning:
+            logger.error("on_state_message", exc_info=True)
+            await message.nack()
+            await asyncio.sleep(30)
+            if self.d_pool:
+                await self.d_pool.expire_connections()
+            return
+
+        except Exception as e:
+            logger.error("on_state_message", exc_info=True)
+            await message.nack()
+            await asyncio.sleep(5)
+            if self.d_pool:
+                await self.d_pool.expire_connections()
+            return
 
 
     def extract_name(self, filename):

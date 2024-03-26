@@ -17,8 +17,8 @@ from .subscriber import Subscriber
 async def main(loop):
     command_args = optparse.OptionParser()
     command_args.add_option('-c', dest="config", default="./possum.ini")
-    command_args.add_option('-r', '--run_mosaic', dest="run_mosaic", action='store_true', default=False)
-    command_args.add_option('-d', '--dry_run', dest="dry_run", action='store_true', default=False)
+    command_args.add_option('--run_mosaic', dest="run_mosaic", action='store_true', default=False)
+    command_args.add_option('--dry_run', dest="dry_run", action='store_true', default=False)
 
     options, arguments = command_args.parse_args()
     parser = configparser.ConfigParser()
