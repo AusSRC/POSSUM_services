@@ -257,8 +257,7 @@ class TileAdmin(admin.ModelAdmin):
                     'colour_band2_mfs_state', 'colour_band2_cube_state'
                    )
 
-
-    readonly_fields = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb')
+    readonly_fields = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb', 'band1_mfs_state', 'band1_cube_state', 'band2_mfs_state', 'band2_cube_state',)
     #fields = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb', 'oned_pipeline_main_band1', 'oned_pipeline_borders_band1', 'threed_pipeline_band1',
     #         'oned_pipeline_main_band2', 'oned_pipeline_borders_band2', 'threed_pipeline_band2')
 
