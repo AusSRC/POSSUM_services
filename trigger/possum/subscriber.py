@@ -5,8 +5,10 @@ import asyncpg
 
 from datetime import datetime
 from dateutil import parser
+from statistics import mode
 from aio_pika import connect_robust, IncomingMessage, ExchangeType, Message, DeliveryMode
 from asyncpg.exceptions import PostgresWarning
+from astroquery.utils.tap.core import TapPlus
 
 logger = logging.getLogger(__name__)
 
@@ -335,7 +337,7 @@ class Subscriber(object):
                     return
 
                 if isinstance(sbid, str):
-                    sbid = sbid.replace('"', '')
+                    sbid = int(sbid.replace('"', ''))
 
                 logging.info(f"Updating pipeline details: {sbid}, state: {body['state']}")
 
@@ -352,13 +354,15 @@ class Subscriber(object):
                 if body['state'] == 'COMPLETED':
                     logging.info(f'Main workflow completed for {sbid}, checking for complete tiles')
                     if not self.dry_run:
-                        self._mosaic(self.COMPLETE_CUBES, sbid)
+                        await self._mosaic(self.COMPLETE_CUBES, sbid)
 
             elif body['repository'] == 'https://github.com/AusSRC/POSSUM_workflow' and body['main_script'] == 'mosaic.nf':
-                state = parser.parse(body['state'])
+                state = body['state']
                 params = json.loads(params)
                 survey_component = params.get('SURVEY_COMPONENT', None)
                 tile_id = params.get('TILE_ID', None)
+                if isinstance(tile_id, str):
+                    tile_id = int(tile_id)
                 band = params.get('BAND', None)
                 if not tile_id or not band:
                     logging.error(f'Parameters {dict(params)} invalid for mosaicking pipeline id: {body["pipeline_id"]}')
@@ -474,6 +478,7 @@ class Subscriber(object):
                     event_date = datetime.fromisoformat(body['event_date'])
                     obs_start = datetime.fromisoformat(body['obs_start'])
                     event_type = body['event_type']
+                    sbid = body['sbid']
 
                     # clean the observation entry
                     if event_type in ['REJECTED'] and not self.dry_run:
@@ -508,7 +513,7 @@ class Subscriber(object):
                                                     validated_state=$4
                                                     WHERE name=$5
                                                     """,
-                                                    body['sbid'],
+                                                    sbid,
                                                     obs_start,
                                                     event_date,
                                                     quality,
@@ -517,6 +522,7 @@ class Subscriber(object):
                     elif event_type in ['RELEASED', 'VALIDATED'] and not self.dry_run:
                         async with self.d_pool.acquire() as conn:
                             async with conn.transaction():
+                                logging.info(f'Updated state for observation {sbid} with quality level {quality}')
                                 await conn.execute("""
                                                     UPDATE possum.observation SET
                                                     sbid=$1,
@@ -525,11 +531,43 @@ class Subscriber(object):
                                                     validated_state=$4
                                                     WHERE name=$5
                                                     """,
-                                                    body['sbid'],
+                                                    sbid,
                                                     obs_start,
                                                     event_date,
                                                     quality,
                                                     name)
+
+                                # submit pipeline on passing validation
+                                if (event_type == 'VALIDATED') and (quality in ['UNCERTAIN', 'GOOD']):
+                                    query = "SELECT sbid, mfs_state, cube_state, mfs_sent, cube_sent FROM possum.observation " \
+                                            "WHERE sbid=$1"
+                                    res = await conn.fetchrow(query, sbid)
+                                    if res['mfs_state'] != 'COMPLETED':
+                                        job_params = {
+                                            "pipeline_key": self.mfs,
+                                            "username": self.username,
+                                            "params": {'SBID': sbid}
+                                        }
+                                        msg = Message(
+                                            json.dumps(job_params).encode(),
+                                            delivery_mode=DeliveryMode.PERSISTENT
+                                        )
+                                        await self.workflow_exchange.publish(msg, routing_key='aussrc.workflow.submit.pull')
+                                        await conn.execute(Subscriber.UPDATE_MFS_SENT, [sbid])
+                                        logging.info(f"Submitted POSSUM mfs pipeline for sbid={sbid}")
+                                    if res['cube_state'] != 'COMPLETED':
+                                        job_params = {
+                                            "pipeline_key": self.main,
+                                            "username": self.username,
+                                            "params": {'SBID': sbid}
+                                        }
+                                        msg = Message(
+                                            json.dumps(job_params).encode(),
+                                            delivery_mode=DeliveryMode.PERSISTENT
+                                        )
+                                        await self.workflow_exchange.publish(msg, routing_key='aussrc.workflow.submit.pull')
+                                        await conn.execute(Subscriber.UPDATE_CUBE_SENT, [sbid])
+                                        logging.info(f"Submitted POSSUM main pipeline for sbid={sbid}")
 
             if not self.dry_run:
                 await message.ack()
