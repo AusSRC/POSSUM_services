@@ -5,55 +5,80 @@ import asyncpg
 
 from datetime import datetime
 from dateutil import parser
-from statistics import mode
 from aio_pika import connect_robust, IncomingMessage, ExchangeType, Message, DeliveryMode
 from asyncpg.exceptions import PostgresWarning
+
 
 logger = logging.getLogger(__name__)
 
 
 class Subscriber(object):
     CUBE_SUBMITTED = "SELECT COUNT(*) as count FROM possum.observation WHERE cube_state IN ('SUBMITTED', 'QUEUED', 'RUNNING')"
+    MFS_SUBMITTED = "SELECT COUNT(*) as count FROM possum.observation WHERE mfs_state IN ('SUBMITTED', 'QUEUED', 'RUNNING')"
+    TILE_SUBMITTED = "SELECT COUNT(*) as count FROM possum.tile WHERE " \
+                     "band1_cube_state IN ('PENDING', 'SUBMITTED', 'QUEUED', 'RUNNING') OR band2_cube_state IN ('PENDING', 'SUBMITTED', 'QUEUED', 'RUNNING') OR " \
+                     "band1_mfs_state in ('PENDING', 'SUBMITTED', 'QUEUED', 'RUNNING') OR band2_mfs_state IN ('PENDING', 'SUBMITTED', 'QUEUED', 'RUNNING')"
 
     UPDATE_CUBE_SENT = "UPDATE possum.observation SET cube_sent=true, cube_state='SUBMITTED' WHERE sbid = any($1)"
     UPDATE_CUBE_STATE = 'UPDATE possum.observation SET cube_state=$1, cube_update=$2 WHERE sbid=$3'
 
-    MFS_SUBMITTED = "SELECT COUNT(*) as count FROM possum.observation WHERE mfs_state IN ('SUBMITTED', 'QUEUED', 'RUNNING')"
-
     UPDATE_MFS_SENT = "UPDATE possum.observation SET mfs_sent=True, mfs_state='SUBMITTED' WHERE sbid = any($1)"
     UPDATE_MFS_STATE = 'UPDATE possum.observation SET mfs_state=$1, mfs_update=$2 WHERE sbid=$3'
 
-    COMPLETE_CUBES = """
-                    SELECT t1.tile, t2.name, t1.band, t.band1_cube_state, t.band2_cube_state FROM
-                        (SELECT tile, band, observation.name FROM (observation LEFT JOIN field_tile ON field_tile.name = observation.name) WHERE sbid=$1) t1
-                    INNER JOIN
-                        (SELECT * FROM (
-                            SELECT tile, band, STRING_AGG(name, ',') as name, COUNT(*) FILTER (WHERE cube_state='COMPLETED') AS n_complete, COUNT(*)
-                            FROM (
-                                SELECT tile, field_tile.name, id, sbid, cube_state, band FROM (field_tile LEFT JOIN observation ON field_tile.name = observation.name)
-                            ) GROUP BY tile, band
-                        ) WHERE n_complete=count) t2
-                        ON t1.tile = t2.tile AND t1.band = t2.band
-                    LEFT JOIN tile t ON t1.tile = t.tile WHERE (
-                        t.band1_cube_state != 'COMPLETED' OR t.band2_cube_state != 'COMPLETED'
-                    );
-                    """
-    COMPLETE_MFS =  """
-                    SELECT t1.tile, t2.name, t1.band, t.band1_mfs_state, t.band2_mfs_state FROM
-                        (SELECT tile, band, observation.name FROM (observation LEFT JOIN field_tile ON field_tile.name = observation.name) WHERE sbid=$1) t1
-                    INNER JOIN
-                        (SELECT * FROM (
-                            SELECT tile, band, STRING_AGG(name, ',') as name, COUNT(*) FILTER (WHERE mfs_state='COMPLETED') AS n_complete, COUNT(*)
-                            FROM (
-                                SELECT tile, field_tile.name, id, sbid, mfs_state, band FROM (field_tile LEFT JOIN observation ON field_tile.name = observation.name)
-                            ) GROUP BY tile, band
-                        ) WHERE n_complete=count) t2
-                        ON t1.tile = t2.tile AND t1.band = t2.band
-                    LEFT JOIN tile t ON t1.tile = t.tile WHERE (
-                        t.band1_mfs_state != 'COMPLETED' OR t.band2_mfs_state != 'COMPLETED'
-                    );
-                    """
-    JOB_SUBMIT_LIMIT = 5
+    COMPLETE_TILES_BAND_1 = """
+        SELECT tile, obs, band, band1_cube_state FROM
+            (SELECT t1.tile, t1.band, t1.n_obs, t1.n_complete, t1.obs, t2.band1_cube_state FROM
+                (SELECT tile, band, STRING_AGG(name, ',') as obs, COUNT(*) AS n_obs, SUM(CASE WHEN cube_state='COMPLETED' THEN 1 ELSE 0 END) AS n_complete FROM
+                    (SELECT tile, observation.name, observation.band, cube_state FROM associated_tile LEFT JOIN observation ON associated_tile.name = observation.name
+                    WHERE band=1)
+            GROUP BY tile, band) t1
+            LEFT JOIN "tile" t2 USING (tile))
+        WHERE (n_obs = n_complete) AND (
+            band1_cube_state NOT IN ('COMPLETED', 'SUBMITTED', 'QUEUED', 'RUNNING') OR
+            band1_cube_state = '' IS NOT FALSE
+        ) ORDER BY tile;
+    """
+    COMPLETE_TILES_BAND_2 = """
+        SELECT tile, obs, band, band2_cube_state FROM
+            (SELECT t1.tile, t1.band, t1.n_obs, t1.n_complete, t1.obs, t2.band2_cube_state FROM
+                (SELECT tile, band, STRING_AGG(name, ',') as obs, COUNT(*) AS n_obs, SUM(CASE WHEN cube_state='COMPLETED' THEN 1 ELSE 0 END) AS n_complete FROM
+                    (SELECT tile, observation.name, observation.band, cube_state FROM associated_tile LEFT JOIN observation ON associated_tile.name = observation.name
+                    WHERE band=2)
+            GROUP BY tile, band) t1
+            LEFT JOIN "tile" t2 USING (tile))
+        WHERE (n_obs = n_complete) AND (
+            band2_cube_state NOT IN ('COMPLETED', 'SUBMITTED', 'QUEUED', 'RUNNING') OR
+            (band2_cube_state = '') IS NOT FALSE
+        ) ORDER BY tile;
+    """
+    COMPLETE_TILES_MFS_BAND_1 = """
+        SELECT tile, obs, band, band1_mfs_state FROM
+            (SELECT t1.tile, t1.band, t1.n_obs, t1.n_complete, t1.obs, t2.band1_mfs_state FROM
+                (SELECT tile, band, STRING_AGG(name, ',') as obs, COUNT(*) AS n_obs, SUM(CASE WHEN mfs_state='COMPLETED' THEN 1 ELSE 0 END) AS n_complete FROM
+                    (SELECT tile, observation.name, observation.band, mfs_state FROM associated_tile LEFT JOIN observation ON associated_tile.name = observation.name
+                    WHERE band=1)
+            GROUP BY tile, band) t1
+            LEFT JOIN "tile" t2 USING (tile))
+        WHERE (n_obs = n_complete) AND (
+            band1_mfs_state NOT IN ('COMPLETED', 'SUBMITTED', 'QUEUED', 'RUNNING') OR
+            (band1_mfs_state = '') IS NOT FALSE
+        ) ORDER BY tile;
+    """
+    COMPLETE_TILES_MFS_BAND_2 = """
+        SELECT tile, obs, band, band2_mfs_state FROM
+            (SELECT t1.tile, t1.band, t1.n_obs, t1.n_complete, t1.obs, t2.band2_mfs_state FROM
+                (SELECT tile, band, STRING_AGG(name, ',') as obs, COUNT(*) AS n_obs, SUM(CASE WHEN mfs_state='COMPLETED' THEN 1 ELSE 0 END) AS n_complete FROM
+                    (SELECT tile, observation.name, observation.band, mfs_state FROM associated_tile LEFT JOIN observation ON associated_tile.name = observation.name
+                    WHERE band=2)
+            GROUP BY tile, band) t1
+            LEFT JOIN "tile" t2 USING (tile))
+        WHERE (n_obs = n_complete) AND (
+            band2_mfs_state NOT IN ('COMPLETED', 'SUBMITTED', 'QUEUED', 'RUNNING') OR
+            (band2_mfs_state = '') IS NOT FALSE
+        ) ORDER BY tile;
+    """
+
+    JOB_SUBMIT_LIMIT = 3
 
     def __init__(self):
         self.d_dsn = None
@@ -135,22 +160,23 @@ class Subscriber(object):
             d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
             async with d_conn.transaction():
                 results = await d_conn.fetch(Subscriber.MFS_SUBMITTED)
+                logging.info(f'mfs_send: {results}')
                 count = int(results[0]['count'])
                 if count >= Subscriber.JOB_SUBMIT_LIMIT:
                     return
 
                 limit = Subscriber.JOB_SUBMIT_LIMIT - count
                 UNSCHEDULED_MFS = f"""SELECT sbid FROM possum.observation WHERE sbid IS NOT NULL AND
-                                      validated_state='ACCEPTED' AND mfs_sent=false order by sbid LIMIT {limit}"""
+                                      validated_state in ('GOOD', 'UNCERTAIN') AND mfs_sent=false order by sbid LIMIT {limit}"""
 
                 # Get observations that we have not sent
                 results = await d_conn.fetch(UNSCHEDULED_MFS)
+                logging.info(f'mfs_send: {results}')
                 if len(results) <= 0:
                     return
 
                 sbid_list = [r['sbid'] for r in results]
-
-                logger.info(f'Sending mfs pipeline(s) to workflow queue: {len(sbid_list)}')
+                logger.info(f'mfs_send: Sending mfs pipeline(s) to workflow queue: {len(sbid_list)}')
 
                 # Send diffuse out to workflow scheduler
                 for sbid in sbid_list:
@@ -188,6 +214,7 @@ class Subscriber(object):
             d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
             async with d_conn.transaction():
                 results = await d_conn.fetch(Subscriber.CUBE_SUBMITTED)
+                logging.info(f'cube_send: {results}')
                 count = int(results[0]['count'])
                 if count >= Subscriber.JOB_SUBMIT_LIMIT:
                     return
@@ -198,12 +225,12 @@ class Subscriber(object):
 
                 # Get observations that we have not sent
                 results = await d_conn.fetch(UNSCHEDULED_CUBE)
+                logging.info(f'cube_send: {results}')
                 if len(results) <= 0:
                     return
 
                 sbid_list = [r['sbid'] for r in results]
-
-                logger.info(f'Sending cube pipeline(s) to workflow queue: {len(sbid_list)}')
+                logger.info(f'cube_send: Sending cube pipeline(s) to workflow queue: {len(sbid_list)}')
 
                 # Send regions out to workflow scheduler
                 for sbid in sbid_list:
@@ -235,49 +262,104 @@ class Subscriber(object):
                     pass
 
 
+    async def _mosaic_send(self):
+        d_conn = None
+        try:
+            d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
+            await d_conn.execute('SET search_path TO possum;')
+            async with d_conn.transaction():
+                results = await d_conn.fetchrow(Subscriber.TILE_SUBMITTED)
+                count = int(dict(results)['count'])
+                logging.info(f'mosaic_send: Existing mosaicking jobs: {count}')
+                if count >= Subscriber.JOB_SUBMIT_LIMIT:
+                    logging.info('mosaic_send [survey]: job limit reached')
+                    return
+
+                limit = Subscriber.JOB_SUBMIT_LIMIT - count
+
+                # submit jobs
+                tile_band1_cube = await d_conn.fetch(Subscriber.COMPLETE_TILES_BAND_1)
+                tile_band2_cube = await d_conn.fetch(Subscriber.COMPLETE_TILES_BAND_2)
+                cube_tiles = tile_band1_cube + tile_band2_cube
+                cube_tiles = cube_tiles[:limit]
+                logging.info(f'mosaic_send [survey]: {cube_tiles}')
+                for t in cube_tiles:
+                    params = {
+                        'TILE_ID': str(dict(t)['tile']),
+                        'OBS_IDS': str(dict(t)['obs'].replace('WALLABY_', '').replace('EMU_', '')),
+                        'BAND': int(dict(t)['band']),
+                        'SURVEY_COMPONENT': 'survey'
+                    }
+                    logging.info(f'mosaic_send: Submitting cube mosaicking pipeline for {params}')
+                    job_params = {
+                        "pipeline_key": self.mosaic,
+                        "username": self.username,
+                        "params": params
+                    }
+                    message = Message(
+                        json.dumps(job_params).encode(),
+                        delivery_mode=DeliveryMode.PERSISTENT
+                    )
+                    # await self.workflow_exchange.publish(
+                    #     message, routing_key='aussrc.workflow.submit.pull'
+                    # )
+
+                # NOTE: ignoring mfs for now due to tile=10396 error
+                return
+
+                tile_band1_mfs = await d_conn.fetch(Subscriber.COMPLETE_TILES_MFS_BAND_1)
+                tile_band2_mfs = await d_conn.fetch(Subscriber.COMPLETE_TILES_MFS_BAND_2)
+                mfs_tiles = tile_band1_mfs + tile_band2_mfs
+                mfs_tiles = mfs_tiles[:limit]
+                logging.info(f'mosaic_send [survey]: {mfs_tiles}')
+                for t in mfs_tiles:
+                    params = {
+                        'TILE_ID': str(dict(t)['tile']),
+                        'OBS_IDS': str(dict(t)['obs'].replace('WALLABY_', '').replace('EMU_', '')),
+                        'BAND': int(dict(t)['band']),
+                        'SURVEY_COMPONENT': 'mfs'
+                    }
+                    logging.info(f'Submitting mfs mosaicking pipeline for {params}')
+                    job_params = {
+                        "pipeline_key": self.mosaic,
+                        "username": self.username,
+                        "params": params
+                    }
+                    message = Message(
+                        json.dumps(job_params).encode(),
+                        delivery_mode=DeliveryMode.PERSISTENT
+                    )
+                    await self.workflow_exchange.publish(
+                        message, routing_key='aussrc.workflow.submit.pull'
+                    )
+
+        except Exception as e:
+            logger.info('_mosaic_send: ', exc_info=True)
+            raise
+
+        finally:
+            if d_conn:
+                try:
+                    await d_conn.close()
+                except:
+                    pass
+
+
     async def _send_to_queue(self):
+        """Periodically submitting workflow jobs
+
+        """
         await self._cube_send()
         await self._mfs_send()
+        await self._mosaic_send()
 
 
     async def consume(self):
+        """Updating database state in response to messages
+
+        """
         self.loop.create_task(self.state_queue.consume(self.on_state_message, no_ack=False))
         self.loop.create_task(self.casda_queue.consume(self.on_casda_message, no_ack=False))
-
-
-    async def _mosaic(self, query, sbid, *args, **kwargs):
-        # Check if new observation completes any hpx tiles
-        d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
-        async with d_conn.transaction():
-            await d_conn.execute('SET search_path TO possum;')
-            results = await d_conn.fetch(query, str(sbid))
-            for r in results:
-                tile_id = str(dict(r)['tile'])
-                obs_ids = str(dict(r)['name'].replace('WALLABY_', '').replace('EMU_', ''))
-                band = int(dict(r)['band'])
-                if (band not in [1, 2]):
-                    raise Exception(f'Band value must be 1 or 2 [band={band}]')
-                tile_params = {
-                    'TILE_ID': tile_id,
-                    'OBS_IDS': obs_ids,
-                    'BAND': band
-                }
-                tile_params.update(kwargs)
-
-                # Publish message to workflow queue
-                logging.info(f"Submitting mosaicking pipeline: {tile_params}")
-                job_params = {
-                    "pipeline_key": self.mosaic,
-                    "username": self.username,
-                    "params": tile_params
-                }
-                message = Message(
-                    json.dumps(job_params).encode(),
-                    delivery_mode=DeliveryMode.PERSISTENT
-                )
-                await self.workflow_exchange.publish(
-                    message, routing_key='aussrc.workflow.submit.pull'
-                )
 
 
     async def on_state_message(self, message: IncomingMessage):
@@ -298,7 +380,7 @@ class Subscriber(object):
                 if isinstance(sbid, str):
                     sbid = sbid.replace('"', '')
 
-                logging.info(f"Updating pipeline details: {sbid}, state: {body['state']}")
+                logging.info(f"on_state_message [mfs]: Updating pipeline details: {sbid}, state: {body['state']}")
 
                 # Update state
                 d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
@@ -307,11 +389,6 @@ class Subscriber(object):
                                         body['state'],
                                         parser.parse(body['updated']),
                                         sbid)
-
-                # Run mosaic pipeline for MFS
-                if body['state'] == 'COMPLETED':
-                    logging.info(f'Main workflow completed for {sbid}, checking for complete tiles')
-                    await self._mosaic(self.COMPLETE_MFS, sbid, SURVEY_COMPONENT='mfs')
 
             elif body['repository'] == 'https://github.com/AusSRC/POSSUM_workflow' and body['main_script'] == 'main.nf':
                 logging.info(f'POSSUM main.nf state change message: {params}')
@@ -324,7 +401,7 @@ class Subscriber(object):
                 if isinstance(sbid, str):
                     sbid = sbid.replace('"', '')
 
-                logging.info(f"Updating pipeline details: {sbid}, state: {body['state']}")
+                logging.info(f"on_state_message [main]: Updating pipeline details: {sbid}, state: {body['state']}")
 
                 # Update state
                 d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
@@ -336,15 +413,10 @@ class Subscriber(object):
                         sbid
                     )
 
-                # Run mosaic pipeline
-                if body['state'] == 'COMPLETED':
-                    logging.info(f'Main workflow completed for {sbid}, checking for complete tiles')
-                    await self._mosaic(self.COMPLETE_CUBES, sbid)
-
             elif body['repository'] == 'https://github.com/AusSRC/POSSUM_workflow' and body['main_script'] == 'mosaic.nf':
                 state = body['state']
                 params = json.loads(params)
-                survey_component = params.get('SURVEY_COMPONENT', None)
+                survey_component = params.get('SURVEY_COMPONENT', 'survey')
                 tile_id = params.get('TILE_ID', None)
                 if isinstance(tile_id, str):
                     tile_id = int(tile_id)
@@ -355,7 +427,7 @@ class Subscriber(object):
 
                 # cube
                 if survey_component == 'survey':
-                    logging.info(f'Updating POSSUM MFS tile {tile_id} band {band} with state={state}')
+                    logging.info(f'on_state_message [mosaic]: updating POSSUM MFS tile {tile_id} band {band} with state={state}')
                     if band == 1:
                         d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
                         await d_conn.execute('UPDATE possum.tile SET band1_cube_state=$1 WHERE tile=$2;',
@@ -369,7 +441,7 @@ class Subscriber(object):
                         )
                 # mfs
                 elif survey_component == 'mfs':
-                    logging.info(f'Updating POSSUM cube tile {tile_id} band {band} with state={state}')
+                    logging.info(f'on_state_message [mosaic]: updating POSSUM cube tile {tile_id} band {band} with state={state}')
                     if band == 1:
                         d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
                         await d_conn.execute(
