@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class Subscriber(object):
-    CUBE_SUBMITTED = "SELECT COUNT(*) as count FROM possum.observation WHERE cube_state IN ('SUBMITTED', 'QUEUED', 'RUNNING')"
-    MFS_SUBMITTED = "SELECT COUNT(*) as count FROM possum.observation WHERE mfs_state IN ('SUBMITTED', 'QUEUED', 'RUNNING')"
+    CUBE_SUBMITTED = "SELECT COUNT(*) as count FROM possum.observation WHERE cube_state IN ('PENDING', 'SUBMITTED', 'QUEUED', 'RUNNING')"
+    MFS_SUBMITTED = "SELECT COUNT(*) as count FROM possum.observation WHERE mfs_state IN ('PENDING', 'SUBMITTED', 'QUEUED', 'RUNNING')"
     TILE_SUBMITTED = "SELECT COUNT(*) as count FROM possum.tile WHERE " \
                      "band1_cube_state IN ('PENDING', 'SUBMITTED', 'QUEUED', 'RUNNING') OR band2_cube_state IN ('PENDING', 'SUBMITTED', 'QUEUED', 'RUNNING') OR " \
                      "band1_mfs_state in ('PENDING', 'SUBMITTED', 'QUEUED', 'RUNNING') OR band2_mfs_state IN ('PENDING', 'SUBMITTED', 'QUEUED', 'RUNNING')"
