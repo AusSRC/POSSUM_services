@@ -5,7 +5,6 @@ CREATE TABLE possum.validation (
     field_id varchar,
     project_code varchar,
     link text,
-    emu_status varchar,
     observation_start_time timestamp without time zone,
     observation_end_time timestamp without time zone,
     holography_model_file text,
