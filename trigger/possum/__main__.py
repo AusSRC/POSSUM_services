@@ -17,9 +17,6 @@ from .subscriber import Subscriber
 async def main(loop):
     command_args = optparse.OptionParser()
     command_args.add_option('-c', dest="config", default="./possum.ini")
-    command_args.add_option('--run_mosaic', dest="run_mosaic", action='store_true', default=False)
-    command_args.add_option('--dry_run', dest="dry_run", action='store_true', default=False)
-
     options, arguments = command_args.parse_args()
     parser = configparser.ConfigParser()
     parser.read(options.config)
@@ -44,16 +41,10 @@ async def main(loop):
     mosaic = parser['Pipeline']['mosaic']
     username = parser['Pipeline']['username']
 
-    if options.dry_run:
-        logging.info('Executing in dry run mode (no database updates or message ack)')
-
     sub = Subscriber()
-    await sub.setup(d_dsn, r_dsn, username, main, mfs, mosaic, loop, options.dry_run)
-    if options.run_mosaic:
-        logging.info('Run mosaicking for completed tiles manually')
-        await sub.run_mosaic_completed_tiles()
-    else:
-        await sub.consume()
+    await sub.setup(d_dsn, r_dsn, username, main, mfs, mosaic, loop)
+    await sub.consume()
+
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
