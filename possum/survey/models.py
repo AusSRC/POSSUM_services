@@ -88,3 +88,57 @@ class Tile(models.Model):
     class Meta:
         managed = False
         db_table = 'tile'
+
+
+class Validation(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    field_id = models.ForeignKey('Observation', to_field='name', blank=True, null=True)
+    project_code = models.TextField(blank=True, null=True)
+    link = models.TextField(blank=True, null=True)
+    observation_start_time = models.DateTimeField(blank=True, null=True)
+    observation_end_time  = models.DateTimeField(blank=True, null=True)
+    holography_model_file = models.TextField(blank=True, null=True)
+    holography_observation_date  = models.DateTimeField(blank=True, null=True)
+    rms = models.FloatField(blank=True, null=True)
+    freq_channel_0 = models.FloatField(blank=True, null=True)
+    chan_width = models.FloatField(blank=True, null=True)
+    solar_flux = models.FloatField(blank=True, null=True)
+    solar_flux_uncertainty = models.FloatField(blank=True, null=True)
+    solar_distance = models.FloatField(blank=True, null=True)
+    solar_pa = models.FloatField(blank=True, null=True)
+    solar_ra = models.TextField(blank=True, null=True)
+    solar_dec = models.FloatField(blank=True, null=True)
+    number_of_components_all = models.IntegerField(blank=True, null=True)
+    avg_flux_i = models.FloatField(blank=True, null=True)
+    stddev_i = models.FloatField(blank=True, null=True)
+    avg_flux_v = models.FloatField(blank=True, null=True)
+    stddev_v = models.FloatField(blank=True, null=True)
+    number_of_components_i = models.IntegerField(blank=True, null=True)
+    number_of_components_v = models.IntegerField(blank=True, null=True)
+    avg_pol_frac = models.FloatField(blank=True, null=True)
+    med_pol_frac = models.FloatField(blank=True, null=True)
+    avg_fd = models.FloatField(blank=True, null=True)
+    med_fd = models.FloatField(blank=True, null=True)
+    stddev_fd = models.FloatField(blank=True, null=True)
+    number_of_components_10_1e5 = models.IntegerField(blank=True, null=True)
+    avg_flux_i_10_1e5 = models.FloatField(blank=True, null=True)
+    stddev_flux_i_10_1e5 = models.FloatField(blank=True, null=True)
+    avg_flux_v_10_1e5 = models.FloatField(blank=True, null=True)
+    stddev_flux_v_10_1e5 = models.FloatField(blank=True, null=True)
+    number_of_components_i_10_1e5 = models.IntegerField(blank=True, null=True)
+    number_of_components_bax_max_pi_10_1e5 = models.IntegerField(blank=True, null=True)
+    avg_pol_frac_10_1e5 = models.FloatField(blank=True, null=True)
+    med_pol_frac_10_1e5 = models.FloatField(blank=True, null=True)
+    avg_fd_10_1e5 = models.FloatField(blank=True, null=True)
+    med_fd_10_1e5 = models.FloatField(blank=True, null=True)
+    stddev_fd_10_1e5 = models.FloatField(blank=True, null=True)
+    oppermann_map_fd = models.FloatField(blank=True, null=True)
+    oppermann_map_fd_uncertainty = models.FloatField(blank=True, null=True)
+    possum_status = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return str(self.field_id)
+
+    class Meta:
+        managed = False
+        db_table = 'validation'

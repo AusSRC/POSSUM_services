@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.db.models.aggregates import Count
 from django.db.models import Q, Count, Case, When, BooleanField
 
-from .models import Observation, AssociatedTile, FieldTile, Tile
+from .models import Observation, AssociatedTile, FieldTile, Tile, Validation
 
 
 def pipeline_state_colour(state):
@@ -31,6 +31,13 @@ class AssociatedTileAdminInline(admin.TabularInline):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+class ValidationAdminInline(admin.TabularInline):
+    model = Validation
+
+    can_delete = False
+    can_add = False
 
 
 class Band1FieldTileAdminInline(admin.TabularInline):
@@ -187,8 +194,12 @@ class Band2FieldTileAdminInline(admin.TabularInline):
         return qs.filter(name__band=2)
 
 
+class ValidationAdmin(admin.ModelAdmin):
+    pass
+
+
 class ObservationAdmin(admin.ModelAdmin):
-    inlines = [AssociatedTileAdminInline,]
+    inlines = [AssociatedTileAdminInline, ValidationAdminInline,]
     ordering = ('mfs_state', 'cube_state', 'name')
 
     list_display = ('name', 'ra_deg', 'dec_deg', 'band', 'obs_start', 'sbid', 'processed_date', 'validated_date',
@@ -424,3 +435,4 @@ class TileAdmin(admin.ModelAdmin):
 
 admin.site.register(Observation, ObservationAdmin)
 admin.site.register(Tile, TileAdmin)
+admin.site.register(Validation, ValidationAdmin)
