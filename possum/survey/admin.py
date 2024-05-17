@@ -33,13 +33,6 @@ class AssociatedTileAdminInline(admin.TabularInline):
         return False
 
 
-class ValidationAdminInline(admin.TabularInline):
-    model = Validation
-
-    can_delete = False
-    can_add = False
-
-
 class Band1FieldTileAdminInline(admin.TabularInline):
     readonly_fields = ('obs_start', 'sbid', 'processed_date', 'validated_date',
                        'validated_state', 'mfs_update', 'mfs_state', 'cube_update', 'cube_state')
@@ -194,12 +187,33 @@ class Band2FieldTileAdminInline(admin.TabularInline):
         return qs.filter(name__band=2)
 
 
+class ValidationAdminInline(admin.TabularInline):
+    model = Validation
+
+    readonly_fields = [field.name for field in Validation._meta.get_fields()]
+    can_delete = False
+    can_add = False
+
+    def get_queryset(self, request):
+        qs = super(ValidationAdminInline, self).get_queryset(request)
+        return qs.filter()
+
+
 class ValidationAdmin(admin.ModelAdmin):
-    pass
+    model = Validation
+    list_display = [field.name for field in Validation._meta.get_fields()]
+
+    can_delete = False
+    can_add = False
+    show_change_link = True
+
+    def get_queryset(self, request):
+        qs = super(ValidationAdmin, self).get_queryset(request)
+        return qs.filter()
 
 
 class ObservationAdmin(admin.ModelAdmin):
-    inlines = [AssociatedTileAdminInline, ValidationAdminInline,]
+    inlines = [AssociatedTileAdminInline, ValidationAdminInline]
     ordering = ('mfs_state', 'cube_state', 'name')
 
     list_display = ('name', 'ra_deg', 'dec_deg', 'band', 'obs_start', 'sbid', 'processed_date', 'validated_date',
