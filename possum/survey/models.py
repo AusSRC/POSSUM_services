@@ -13,6 +13,7 @@ PIPELINE_STATE = (
         ('FAILED', 'FAILED'),
         ('CANCELLED', 'CANCELLED'),)
 
+
 class AssociatedTile(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.ForeignKey('Observation', models.DO_NOTHING, db_column='name', to_field='name', blank=True, null=True)
@@ -92,7 +93,7 @@ class Tile(models.Model):
 
 class Validation(models.Model):
     id = models.BigAutoField(primary_key=True)
-    field_id = models.ForeignKey('Observation', to_field='name', blank=True, null=True)
+    field_id = models.ForeignKey('Observation', db_column='field_id', on_delete=models.DO_NOTHING, to_field='name', blank=True, null=True)
     project_code = models.TextField(blank=True, null=True)
     link = models.TextField(blank=True, null=True)
     observation_start_time = models.DateTimeField(blank=True, null=True)
