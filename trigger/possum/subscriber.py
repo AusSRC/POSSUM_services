@@ -27,7 +27,7 @@ class Subscriber(object):
 
     COMPLETE_TILES_BAND_1 = """
         SELECT tile, obs, band, band1_cube_state FROM
-            (SELECT t1.tile, t1.band, t1.n_obs, t1.n_complete, t1.obs, t2.band1_cube_state FROM
+            (SELECT t1.tile, t1.band, t1.n_obs, t1.n_complete, t1.obs, t2.band1_cube_state, t2.band1_cube_sent FROM
                 (SELECT tile, band, STRING_AGG(name, ',') as obs, COUNT(*) AS n_obs, SUM(CASE WHEN cube_state='COMPLETED' THEN 1 ELSE 0 END) AS n_complete FROM
                     (SELECT tile, observation.name, observation.band, cube_state FROM associated_tile LEFT JOIN observation ON associated_tile.name = observation.name
                     WHERE band=1)
@@ -36,11 +36,12 @@ class Subscriber(object):
         WHERE (n_obs = n_complete) AND (
             band1_cube_state NOT IN ('COMPLETED', 'SUBMITTED', 'QUEUED', 'RUNNING') OR
             band1_cube_state = '' IS NOT FALSE
-        ) ORDER BY tile;
+        ) AND band1_cube_sent = false
+        ORDER BY tile;
     """
     COMPLETE_TILES_BAND_2 = """
         SELECT tile, obs, band, band2_cube_state FROM
-            (SELECT t1.tile, t1.band, t1.n_obs, t1.n_complete, t1.obs, t2.band2_cube_state FROM
+            (SELECT t1.tile, t1.band, t1.n_obs, t1.n_complete, t1.obs, t2.band2_cube_state, t2.band2_cube_sent FROM
                 (SELECT tile, band, STRING_AGG(name, ',') as obs, COUNT(*) AS n_obs, SUM(CASE WHEN cube_state='COMPLETED' THEN 1 ELSE 0 END) AS n_complete FROM
                     (SELECT tile, observation.name, observation.band, cube_state FROM associated_tile LEFT JOIN observation ON associated_tile.name = observation.name
                     WHERE band=2)
@@ -49,11 +50,12 @@ class Subscriber(object):
         WHERE (n_obs = n_complete) AND (
             band2_cube_state NOT IN ('COMPLETED', 'SUBMITTED', 'QUEUED', 'RUNNING') OR
             (band2_cube_state = '') IS NOT FALSE
-        ) ORDER BY tile;
+        ) AND band2_cube_sent = false
+        ORDER BY tile;
     """
     COMPLETE_TILES_MFS_BAND_1 = """
         SELECT tile, obs, band, band1_mfs_state FROM
-            (SELECT t1.tile, t1.band, t1.n_obs, t1.n_complete, t1.obs, t2.band1_mfs_state FROM
+            (SELECT t1.tile, t1.band, t1.n_obs, t1.n_complete, t1.obs, t2.band1_mfs_state, t2.band1_mfs_sent FROM
                 (SELECT tile, band, STRING_AGG(name, ',') as obs, COUNT(*) AS n_obs, SUM(CASE WHEN mfs_state='COMPLETED' THEN 1 ELSE 0 END) AS n_complete FROM
                     (SELECT tile, observation.name, observation.band, mfs_state FROM associated_tile LEFT JOIN observation ON associated_tile.name = observation.name
                     WHERE band=1)
@@ -62,11 +64,12 @@ class Subscriber(object):
         WHERE (n_obs = n_complete) AND (
             band1_mfs_state NOT IN ('COMPLETED', 'SUBMITTED', 'QUEUED', 'RUNNING') OR
             (band1_mfs_state = '') IS NOT FALSE
-        ) ORDER BY tile;
+        ) AND band1_mfs_sent = false
+        ORDER BY tile;
     """
     COMPLETE_TILES_MFS_BAND_2 = """
         SELECT tile, obs, band, band2_mfs_state FROM
-            (SELECT t1.tile, t1.band, t1.n_obs, t1.n_complete, t1.obs, t2.band2_mfs_state FROM
+            (SELECT t1.tile, t1.band, t1.n_obs, t1.n_complete, t1.obs, t2.band2_mfs_state, t2.band2_mfs_sent FROM
                 (SELECT tile, band, STRING_AGG(name, ',') as obs, COUNT(*) AS n_obs, SUM(CASE WHEN mfs_state='COMPLETED' THEN 1 ELSE 0 END) AS n_complete FROM
                     (SELECT tile, observation.name, observation.band, mfs_state FROM associated_tile LEFT JOIN observation ON associated_tile.name = observation.name
                     WHERE band=2)
@@ -75,10 +78,18 @@ class Subscriber(object):
         WHERE (n_obs = n_complete) AND (
             band2_mfs_state NOT IN ('COMPLETED', 'SUBMITTED', 'QUEUED', 'RUNNING') OR
             (band2_mfs_state = '') IS NOT FALSE
-        ) ORDER BY tile;
+        ) AND band2_mfs_sent = false
+        ORDER BY tile;
     """
+    UPDATE_BAND1_CUBE_SENT = "UPDATE possum.tile SET band1_cube_state='SUBMITTED', band1_cube_sent=true WHERE tile=$1"
+    UPDATE_BAND2_CUBE_SENT = "UPDATE possum.tile SET band2_cube_state='SUBMITTED', band2_cube_sent=true WHERE tile=$1"
+
+    UPDATE_BAND1_MFS_SENT = "UPDATE possum.tile SET band1_mfs_state='SUBMITTED', band1_mfs_sent=true WHERE tile=$1"
+    UPDATE_BAND2_MFS_SENT = "UPDATE possum.tile SET band2_mfs_state='SUBMITTED', band2_mfs_sent=true WHERE tile=$1"
+
 
     JOB_SUBMIT_LIMIT = 3
+
 
     def __init__(self):
         self.d_dsn = None
@@ -262,76 +273,55 @@ class Subscriber(object):
                     pass
 
 
+    async def _mosaic_check_and_submit(self, d_conn, fetch_query, update_query, component):
+        """Check existing mosaicking job count. Submit job for band and cube type.
+
+        """
+        # check count
+        results = await d_conn.fetchrow(Subscriber.TILE_SUBMITTED)
+        count = int(dict(results)['count'])
+        logging.info(f'_mosaic_send: Existing mosaicking jobs: {count}')
+        if count >= Subscriber.JOB_SUBMIT_LIMIT:
+            logging.info('_mosaic_send: job limit reached')
+            return
+
+        # submit jobs
+        limit = Subscriber.JOB_SUBMIT_LIMIT - count
+        tiles = await d_conn.fetch(fetch_query)
+        tiles = tiles[:limit]
+        logging.info(f'_mosaic_send: {tiles}')
+        for t in tiles:
+            tile = str(dict(t)['tile'])
+            params = {
+                'TILE_ID': tile,
+                'OBS_IDS': str(dict(t)['obs'].replace('WALLABY_', '').replace('EMU_', '')),
+                'BAND': int(dict(t)['band']),
+                'SURVEY_COMPONENT': component
+            }
+            logging.info(f'_mosaic_send: Submitting cube mosaicking pipeline for {params}')
+            job_params = {
+                "pipeline_key": self.mosaic,
+                "username": self.username,
+                "params": params
+            }
+            message = Message(
+                json.dumps(job_params).encode(),
+                delivery_mode=DeliveryMode.PERSISTENT
+            )
+            await self.workflow_exchange.publish(message, routing_key='aussrc.workflow.submit.pull')
+            await d_conn.execute(update_query, int(tile))
+
+
     async def _mosaic_send(self):
         d_conn = None
         try:
             d_conn = await asyncpg.connect(dsn=None, **self.d_dsn)
             await d_conn.execute('SET search_path TO possum;')
             async with d_conn.transaction():
-                results = await d_conn.fetchrow(Subscriber.TILE_SUBMITTED)
-                count = int(dict(results)['count'])
-                logging.info(f'mosaic_send: Existing mosaicking jobs: {count}')
-                if count >= Subscriber.JOB_SUBMIT_LIMIT:
-                    logging.info('mosaic_send [survey]: job limit reached')
-                    return
-
-                limit = Subscriber.JOB_SUBMIT_LIMIT - count
-
-                # submit jobs
-                tile_band1_cube = await d_conn.fetch(Subscriber.COMPLETE_TILES_BAND_1)
-                tile_band2_cube = await d_conn.fetch(Subscriber.COMPLETE_TILES_BAND_2)
-                cube_tiles = tile_band1_cube + tile_band2_cube
-                cube_tiles = cube_tiles[:limit]
-                logging.info(f'mosaic_send [survey]: {cube_tiles}')
-                for t in cube_tiles:
-                    params = {
-                        'TILE_ID': str(dict(t)['tile']),
-                        'OBS_IDS': str(dict(t)['obs'].replace('WALLABY_', '').replace('EMU_', '')),
-                        'BAND': int(dict(t)['band']),
-                        'SURVEY_COMPONENT': 'survey'
-                    }
-                    logging.info(f'mosaic_send: Submitting cube mosaicking pipeline for {params}')
-                    job_params = {
-                        "pipeline_key": self.mosaic,
-                        "username": self.username,
-                        "params": params
-                    }
-                    message = Message(
-                        json.dumps(job_params).encode(),
-                        delivery_mode=DeliveryMode.PERSISTENT
-                    )
-                    # await self.workflow_exchange.publish(
-                    #     message, routing_key='aussrc.workflow.submit.pull'
-                    # )
-
-                # NOTE: ignoring mfs for now due to tile=10396 error
-                return
-
-                tile_band1_mfs = await d_conn.fetch(Subscriber.COMPLETE_TILES_MFS_BAND_1)
-                tile_band2_mfs = await d_conn.fetch(Subscriber.COMPLETE_TILES_MFS_BAND_2)
-                mfs_tiles = tile_band1_mfs + tile_band2_mfs
-                mfs_tiles = mfs_tiles[:limit]
-                logging.info(f'mosaic_send [survey]: {mfs_tiles}')
-                for t in mfs_tiles:
-                    params = {
-                        'TILE_ID': str(dict(t)['tile']),
-                        'OBS_IDS': str(dict(t)['obs'].replace('WALLABY_', '').replace('EMU_', '')),
-                        'BAND': int(dict(t)['band']),
-                        'SURVEY_COMPONENT': 'mfs'
-                    }
-                    logging.info(f'Submitting mfs mosaicking pipeline for {params}')
-                    job_params = {
-                        "pipeline_key": self.mosaic,
-                        "username": self.username,
-                        "params": params
-                    }
-                    message = Message(
-                        json.dumps(job_params).encode(),
-                        delivery_mode=DeliveryMode.PERSISTENT
-                    )
-                    await self.workflow_exchange.publish(
-                        message, routing_key='aussrc.workflow.submit.pull'
-                    )
+                await self._mosaic_check_and_submit(d_conn, Subscriber.COMPLETE_TILES_MFS_BAND_1, Subscriber.UPDATE_BAND1_MFS_SENT, 'mfs')
+                await self._mosaic_check_and_submit(d_conn, Subscriber.COMPLETE_TILES_MFS_BAND_2, Subscriber.UPDATE_BAND2_MFS_SENT, 'mfs')
+                await self._mosaic_check_and_submit(d_conn, Subscriber.COMPLETE_TILES_BAND_1, Subscriber.UPDATE_BAND1_CUBE_SENT, 'survey')
+                await self._mosaic_check_and_submit(d_conn, Subscriber.COMPLETE_TILES_BAND_2, Subscriber.UPDATE_BAND2_CUBE_SENT, 'survey')
 
         except Exception as e:
             logger.info('_mosaic_send: ', exc_info=True)
