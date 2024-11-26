@@ -18,7 +18,7 @@ async def upsert_file(db_pool, file):
     """
     async with db_pool.acquire() as conn:
         async with conn.transaction():
-            obs_name = os.path.basename(file).replace('-FULL', '').strip('.csv')
+            obs_name = os.path.basename(file).replace('-FULL', '').strip('.csv').rsplit('_', 1)[0]
             print(obs_name)
             with open(file) as csvfile:
                 lines = csv.reader(csvfile, delimiter=',')
@@ -51,6 +51,7 @@ async def upsert_file(db_pool, file):
                         obs_name, tile_id
                     )
                     print(res)
+            print("\n")
     return
 
 
