@@ -353,6 +353,10 @@ class Subscriber(object):
 
 
     async def on_state_message(self, message: IncomingMessage):
+        """AusSRC internal workflow state events
+        Logic to update the POSSUM database tables (observation, tile etc) based on processing stage
+
+        """
         try:
             body = json.loads(message.body)
             params = body.get('params', 'null')
@@ -491,6 +495,10 @@ class Subscriber(object):
 
 
     async def on_casda_message(self, message: IncomingMessage):
+        """Logic to update the POSSUM observation database based on
+        CASDA observation events.
+
+        """
         try:
             body = json.loads(message.body)
 
@@ -500,79 +508,60 @@ class Subscriber(object):
                 return
 
             for f, _, _, quality in body['files']:
+                # Skip if filename is not correct
                 name = self.extract_name(f)
                 if name is None:
                     continue
+                if not (f.startswith('image.restored.i.') and f.endswith('.contcube.conv.fits')):
+                    continue
 
-                if f.startswith('image.restored.i.') and f.endswith('.contcube.conv.fits'):
-                    logger.info(f"Match. Field Name: {name}, "
-                                f"SBID: {body['sbid']}, "
-                                f"Event Type: {body['event_type']}, "
-                                f"Event Date: {body['event_date']}, "
-                                f"Quality: {quality}, "
-                                f"Filename: {f}")
+                # TODO: check. Skip if there is an SBID already for this field name
+                res = await conn.fetchrow('SELECT sbid FROM possum.observation WHERE name = $1', name)
+                if res['sbid'] is not None:
+                    logging.info(f'Already observed field {name} with SBID {res['sbid']}. Skipping.')
+                    continue
 
-                    event_date = datetime.fromisoformat(body['event_date'])
-                    obs_start = datetime.fromisoformat(body['obs_start'])
-                    event_type = body['event_type']
-                    sbid = body['sbid']
+                logger.info(f"Match. Field Name: {name}, "
+                            f"SBID: {body['sbid']}, "
+                            f"Event Type: {body['event_type']}, "
+                            f"Event Date: {body['event_date']}, "
+                            f"Quality: {quality}, "
+                            f"Filename: {f}")
 
-                    # clean the observation entry
-                    if event_type in ['REJECTED']:
-                        async with self.d_pool.acquire() as conn:
-                            async with conn.transaction():
-                                await conn.execute("""
-                                                   UPDATE possum.observation SET
-                                                   sbid=null,
-                                                   obs_start=null,
-                                                   processed_date=null,
-                                                   validated_date=null,
-                                                   validated_state=$1,
-                                                   mfs_state=null,
-                                                   mfs_update=null,
-                                                   mfs_sent=false,
-                                                   cube_state=null,
-                                                   cube_update=null,
-                                                   cube_sent=false
-                                                   WHERE name=$2
-                                                   """,
-                                                   quality,
-                                                   name)
+                event_date = datetime.fromisoformat(body['event_date'])
+                obs_start = datetime.fromisoformat(body['obs_start'])
+                event_type = body['event_type']
+                sbid = body['sbid']
 
-                    elif event_type in ['DEPOSITED']:
-                        async with self.d_pool.acquire() as conn:
-                            async with conn.transaction():
-                                await conn.execute("""
-                                                    UPDATE possum.observation SET
-                                                    sbid=$1,
-                                                    obs_start=$2,
-                                                    processed_date=$3,
-                                                    validated_state=$4
-                                                    WHERE name=$5
-                                                    """,
-                                                    sbid,
-                                                    obs_start,
-                                                    event_date,
-                                                    quality,
-                                                    name)
+                # Observation is deposited into CASDA.
+                # This will be the first CASDA observation_event to be processed
+                if event_type in ['DEPOSITED']:
+                    async with self.d_pool.acquire() as conn:
+                        logging.info(f'Observation for field {name} with SBID {sbid} deposited. Awaiting validation state.')
+                        deposit_query = "UPDATE possum.observation SET " \
+                                "sbid=$1, obs_start=$2, processed_date=$3, validated_state=$4 " \
+                                "WHERE name=$5"
+                        await conn.execute(deposit_query, sbid, obs_start, event_date, quality, name)
 
-                    elif event_type in ['RELEASED', 'VALIDATED']:
-                        async with self.d_pool.acquire() as conn:
-                            async with conn.transaction():
-                                logging.info(f'Updated state for observation {sbid} with quality level {quality}')
-                                await conn.execute("""
-                                                    UPDATE possum.observation SET
-                                                    sbid=$1,
-                                                    obs_start=$2,
-                                                    validated_date=$3,
-                                                    validated_state=$4
-                                                    WHERE name=$5
-                                                    """,
-                                                    sbid,
-                                                    obs_start,
-                                                    event_date,
-                                                    quality,
-                                                    name)
+                # CASDA observation accepted by the science team. Update state in database.
+                elif event_type in ['RELEASED']:
+                    async with self.d_pool.acquire() as conn:
+                        logging.info(f'Updated state for observation {sbid} with quality level {quality}')
+                        accept_query = "UPDATE possum.observation SET " \
+                                "sbid=$1, obs_start=$2, validated_date=$3, validated_state=$4 " \
+                                "WHERE name=$5"
+                        await conn.execute(accept_query, sbid, obs_start, event_date, quality, name)
+
+                # Observation is rejected.
+                # Remove possum.observation entry for a rejected observation. Clear SBID for the field.
+                elif event_type in ['REJECTED']:
+                    async with self.d_pool.acquire() as conn:
+                        logging.info(f'Observation for field {name} with SBID {sbid} rejected. Removing from POSSUM observation database.')
+                        reject_query = "UPDATE possum.observation SET " \
+                                "sbid=null, obs_start=null, processed_date=null, validated_date=null, validated_state=$1, " \
+                                "mfs_state=null, mfs_update=null, mfs_sent=false, cube_state=null, cube_update=null, cube_sent=false " \
+                                "WHERE name=$2"
+                        await conn.execute(reject_query, quality, name)
 
             await message.ack()
 
