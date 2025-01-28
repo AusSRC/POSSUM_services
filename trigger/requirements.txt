@@ -1,4 +1,0 @@
-asyncpg
-asyncio
-aio_pika
-python-dateutil
