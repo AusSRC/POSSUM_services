@@ -271,7 +271,6 @@ class ObservationAdmin(admin.ModelAdmin):
 
 class TileAdmin(admin.ModelAdmin):
     inlines = [Band1FieldTileAdminInline, Band2FieldTileAdminInline,]
-
     #list_display = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb', 'band1_count', 'band1_mfs_complete', 'band1_cube_complete',
     #                'oned_pipeline_main_band1', 'oned_pipeline_borders_band1', 'threed_pipeline_band1',
     #                'oned_pipeline_main_band2', 'oned_pipeline_borders_band2', 'threed_pipeline_band2')
@@ -387,13 +386,12 @@ class TileAdmin(admin.ModelAdmin):
 
         qs = qs.annotate(
             band2_cube_complete=Case(
-                When(band1_count=Count('fieldtile',
+                When(band2_count=Count('fieldtile',
                                         filter=Q(fieldtile__name__band=2,
                                         fieldtile__name__cube_state='COMPLETED')), then=True),
                 default=False,
                 output_field=BooleanField()
             )).order_by('-band2_cube_complete')
-
 
         return qs
 
