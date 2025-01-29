@@ -16,11 +16,6 @@ services:
       - static_volume:/app/static:ro
     networks:
       - possum_network
-    healthcheck:
-      test: ["CMD", "nginx", "-t"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   possum_certbot:
     image: certbot/certbot:latest
@@ -50,11 +45,6 @@ services:
       - DEBUG=0
     networks:
       - possum_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
 networks:
   possum_network:
