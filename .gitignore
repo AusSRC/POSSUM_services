@@ -164,4 +164,8 @@ possum.ini
 logs
 *.sh
 *.ini
-
+*.pem
+*.env
+psql.env
+nginx/certs/letsencrypt/
+nginx/certs/www/
