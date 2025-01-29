@@ -31,7 +31,7 @@ END $$;
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'possum_user') THEN
-        CREATE USER "gavo" WITH PASSWORD 'possum_user';
+        CREATE USER "possum_user" WITH PASSWORD 'possum_user';
     END IF;
 END $$;
 
