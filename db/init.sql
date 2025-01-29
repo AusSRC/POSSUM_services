@@ -27,6 +27,14 @@ BEGIN
     END IF;
 END $$;
 
+-- Create gavo user if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'possum_user') THEN
+        CREATE USER "gavo" WITH PASSWORD 'possum_user';
+    END IF;
+END $$;
+
 -- Create gavoadmin user if it doesn't exist
 DO $$
 BEGIN
