@@ -4,39 +4,57 @@ services:
   possum_nginx:
     image: nginx:latest
     container_name: possum_nginx
+    restart: unless-stopped
     ports:
-      - 80:80
-      - 443:443
+      - "80:80"
+      - "443:443"
     volumes:
-      - ./nginx/conf/default.conf:/etc/nginx/conf.d/default.conf
-      - ./nginx/certs/www:/var/www/certbot
-      - ./nginx/certs/letsencrypt:/etc/letsencrypt
+      - ./nginx/conf/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs/www:/var/www/certbot:ro
+      - ./nginx/certs/letsencrypt:/etc/letsencrypt:ro
       - ./nginx/logs:/var/log/nginx
-      - static_volume:/app/static
+      - static_volume:/app/static:ro
     networks:
       - possum_network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   possum_certbot:
     image: certbot/certbot:latest
     container_name: possum_certbot
+    restart: unless-stopped
     volumes:
-      - ./nginx/certs/www:/var/www/certbot
-      - ./nginx/certs/letsencrypt:/etc/letsencrypt
+      - ./nginx/certs/www:/var/www/certbot:rw
+      - ./nginx/certs/letsencrypt:/etc/letsencrypt:rw
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     networks:
       - possum_network
 
   possum:
-    build: possum
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: possum
     container_name: possum
+    restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:
-      - ./possum:/opt/services/possum/src
-      - static_volume:/app/static
+      - ./possum:/opt/services/possum/src:rw
+      - static_volume:/app/static:rw
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DEBUG=0
     networks:
       - possum_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   possum_network:
@@ -45,3 +63,4 @@ networks:
 
 volumes:
   static_volume:
+    name: possum_static
