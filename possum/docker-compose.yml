@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   possum_nginx:
     image: nginx:latest
