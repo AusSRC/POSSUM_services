@@ -160,6 +160,7 @@ cython_debug/
 #.idea/
 
 # Other
+**static**
 possum.ini
 logs
 *.sh
