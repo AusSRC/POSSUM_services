@@ -10,10 +10,10 @@ services:
     container_name: possum_db
     ports:
       - 5432:5432
-    environment:
-      - POSTGRES_HOST_AUTH_METHOD=trust
+    env_file:
+      - psql.env
     volumes:
-      - /data:/var/lib/postgresql/data
+      - /mnt/data/possum_db:/var/lib/postgresql/data
     networks:
       - possum_network
 
