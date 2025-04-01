@@ -19,7 +19,33 @@ docker-compose up --build -d
 
 ## Web
 
-The web interface uses Django to present an interactive portal to view and manipulate the contents of the database. This relies on having the database service already up and running. In order for the application to be accessible via web you will also need to create and run the `nginx` reverse proxy.
+The web interface uses Django to present an interactive portal to view and manipulate the contents of the database. This relies on having the database service already up and running (see steps above). In order for the application to be accessible via web you will also need to create and run the `nginx` reverse proxy.
+
+### Build
+
+We use environment variables to set some of the Django settings. To build the application you will need to create a `.env` file and place it under `/possum/possum` with the following variables set:
+
+```
+LOCAL = True
+DEBUG = True
+DJANGO_SECRET_KEY =
+ALLOWED_HOSTS =
+
+DATABASE_HOST = possum_db
+DATABASE_PORT = 5432
+DATABASE_NAME = possum
+DATABASE_USER = postgres
+DATABASE_PASSWORD = password
+SEARCH_PATH = public,possum
+```
+
+Where the Django secret key can be generated with various tools (e.g. https://djecrety.ir/). The second set of database environment variables are for connection to the database, so you will fill these out based on the settings of the deployment of the service above. This command will build both the `nginx` reverse proxy and the Django `web` services.
+
+```
+docker-compose up --build -d
+```
+
+You can find more information about Django settings here: https://docs.djangoproject.com/en/5.1/topics/settings/
 
 ### Static files
 
@@ -33,10 +59,3 @@ This should create a bunch of files under `possum/static`. This volume is mounte
 
 The static volume is mounted to `/opt/services/possum_web/src/static/` inside of the containers. So an alternative for creating the static folders is to run the `collectstatic` command from inside the `possum_web` container and copy the files to the static volume directory.
 
-### Build
-
-This command will build both the `nginx` reverse proxy and the Django `web` services.
-
-```
-docker-compose up --build -d
-```

@@ -170,3 +170,4 @@ logs
 psql.env
 nginx/certs/letsencrypt/
 nginx/certs/www/
+pass
