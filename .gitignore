@@ -163,8 +163,14 @@ cython_debug/
 #.idea/
 
 # Other
+**static**
 possum.ini
 logs
 *.sh
 *.ini
-
+*.pem
+*.env
+psql.env
+nginx/certs/letsencrypt/
+nginx/certs/www/
+pass

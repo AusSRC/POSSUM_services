@@ -1,0 +1,45 @@
+services:
+  possum_web:
+    build:
+      context: possum
+      dockerfile: Dockerfile
+    image: possum_web
+    container_name: possum_web
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./possum:/opt/services/possum_web/src
+      - static_volume:/opt/services/possum_web/src/static
+      - media_volume:/opt/services/possum_web/src/media
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DEBUG=0
+    networks:
+      - possum_network
+
+  possum_nginx:
+    build:
+      context: nginx
+    image: possum_nginx
+    container_name: possum_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/logs:/var/log/nginx
+      - static_volume:/opt/services/possum_web/src/static
+      - media_volume:/opt/services/possum_web/src/media
+    networks:
+      - possum_network
+
+networks:
+  possum_network:
+    name: possum_network
+    driver: bridge
+
+volumes:
+  static_volume:
+  media_volume:

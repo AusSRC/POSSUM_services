@@ -271,21 +271,13 @@ class ObservationAdmin(admin.ModelAdmin):
 
 class TileAdmin(admin.ModelAdmin):
     inlines = [Band1FieldTileAdminInline, Band2FieldTileAdminInline,]
-
-    #list_display = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb', 'band1_count', 'band1_mfs_complete', 'band1_cube_complete',
-    #                'oned_pipeline_main_band1', 'oned_pipeline_borders_band1', 'threed_pipeline_band1',
-    #                'oned_pipeline_main_band2', 'oned_pipeline_borders_band2', 'threed_pipeline_band2')
     list_display = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb',
                     'band1_count', 'band1_mfs_complete', 'band1_cube_complete',
                     'band2_count', 'band2_mfs_complete', 'band2_cube_complete',
                     'colour_band1_mfs_state', 'colour_band1_cube_state',
                     'colour_band2_mfs_state', 'colour_band2_cube_state'
                    )
-
     readonly_fields = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb', 'band1_mfs_state', 'band1_cube_state', 'band2_mfs_state', 'band2_cube_state',)
-    #fields = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb', 'oned_pipeline_main_band1', 'oned_pipeline_borders_band1', 'threed_pipeline_band1',
-    #         'oned_pipeline_main_band2', 'oned_pipeline_borders_band2', 'threed_pipeline_band2')
-
     fields = ('tile', 'ra_deg', 'dec_deg', 'gl', 'gb', 'band1_mfs_state', 'band1_cube_state', 'band2_mfs_state', 'band2_cube_state',)
 
     search_fields = ('tile',
@@ -387,13 +379,12 @@ class TileAdmin(admin.ModelAdmin):
 
         qs = qs.annotate(
             band2_cube_complete=Case(
-                When(band1_count=Count('fieldtile',
+                When(band2_count=Count('fieldtile',
                                         filter=Q(fieldtile__name__band=2,
                                         fieldtile__name__cube_state='COMPLETED')), then=True),
                 default=False,
                 output_field=BooleanField()
             )).order_by('-band2_cube_complete')
-
 
         return qs
 
