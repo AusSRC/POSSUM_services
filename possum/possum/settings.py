@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'sslserver',
     'social_django',
-    'survey'
+    'survey',
+    'pipeline_validation'
 ]
 
 MIDDLEWARE = [
