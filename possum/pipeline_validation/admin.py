@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import ObservationBand1_1DPipelineValidation, ObservationBand2_1DPipelineValidation, PartialTilePipelineRegionsBand1, PartialTilePipelineRegionsBand2, SurveyTiles_3DPipeline
+from .models import (ObservationBand1_1DPipelineValidation, ObservationBand2_1DPipelineValidation, 
+                     PartialTilePipelineRegionsBand1, PartialTilePipelineRegionsBand2, 
+                     SurveyTiles_3DPipelineBand1,  SurveyTiles_3DPipelineBand2)
 
 class PartialTile1DBand1Admin(admin.ModelAdmin):
     list_display = [field.name for field in PartialTilePipelineRegionsBand1._meta.get_fields()]
@@ -62,11 +64,11 @@ class Observation1DBand2Admin(admin.ModelAdmin):
         qs = super(Observation1DBand2Admin, self).get_queryset(request)
         return qs.filter()
 
-class SurveyTiles3DPipelineAdmin(admin.ModelAdmin):
-    readonly_fields = ('tile_id', '_3d_pipeline_band1', '_3d_pipeline_band2', '_3d_pipeline_ingest_band1', '_3d_pipeline_ingest_band2')
-    list_display = [field.name for field in SurveyTiles_3DPipeline._meta.get_fields()]
-    search_fields = ('tile_id__tile', '_3d_pipeline_band1', '_3d_pipeline_band2', '_3d_pipeline_ingest_band1',
-                     '_3d_pipeline_ingest_band2', '_3d_pipeline_val_band1', '_3d_pipeline_val_band2')
+class SurveyTiles3DPipelineBand1Admin(admin.ModelAdmin):
+    readonly_fields = ('tile_id', '_3d_pipeline', '_3d_pipeline_ingest', '_3d_val_link')
+    list_display = [field.name for field in SurveyTiles_3DPipelineBand1._meta.get_fields()]
+    search_fields = ('tile_id__tile', '_3d_pipeline', '_3d_pipeline_ingest', '_3d_val_comments',
+                     '_3d_pipeline_val', '_3d_pipeline_validator', '_3d_val_link')
     
     def has_add_permission(self, request, obj=None):
         return False
@@ -78,11 +80,30 @@ class SurveyTiles3DPipelineAdmin(admin.ModelAdmin):
         return False
 
     def get_queryset(self, request):
-        qs = super(SurveyTiles3DPipelineAdmin, self).get_queryset(request)
+        qs = super(SurveyTiles3DPipelineBand1Admin, self).get_queryset(request)
         return qs.filter()
+class SurveyTiles3DPipelineBand2Admin(admin.ModelAdmin):
+    readonly_fields = ('tile_id', '_3d_pipeline', '_3d_pipeline_ingest', '_3d_val_link')
+    list_display = [field.name for field in SurveyTiles_3DPipelineBand2._meta.get_fields()]
+    search_fields = ('tile_id__tile', '_3d_pipeline', '_3d_pipeline_ingest', '_3d_val_comments',
+                     '_3d_pipeline_val', '_3d_pipeline_validator', '_3d_val_link')
+    
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return True
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_queryset(self, request):
+        qs = super(SurveyTiles3DPipelineBand2Admin, self).get_queryset(request)
+        return qs.filter()    
 
 admin.site.register(PartialTilePipelineRegionsBand1, PartialTile1DBand1Admin)
 admin.site.register(PartialTilePipelineRegionsBand2, PartialTile1DBand2Admin)
 admin.site.register(ObservationBand1_1DPipelineValidation, Observation1DBand1Admin)
 admin.site.register(ObservationBand2_1DPipelineValidation, Observation1DBand2Admin)
-admin.site.register(SurveyTiles_3DPipeline, SurveyTiles3DPipelineAdmin)
+admin.site.register(SurveyTiles_3DPipelineBand1, SurveyTiles3DPipelineBand1Admin)
+admin.site.register(SurveyTiles_3DPipelineBand2, SurveyTiles3DPipelineBand2Admin)
