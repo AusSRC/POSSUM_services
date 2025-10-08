@@ -55,31 +55,39 @@ class PartialTilePipelineRegionsBand2(models.Model):
         db_table = 'partial_tile_1d_pipeline_band2'
         unique_together = (('observation', 'sbid', 'tile1', 'tile2', 'tile3', 'tile4', 'type'),)
 
-class ObservationBand1_1DPipelineValidation(models.Model):
+class ObservationStatesBand1(models.Model):
     name = models.OneToOneField('survey.Observation', models.DO_NOTHING, db_column='name', to_field='name', primary_key=True)
     sbid = models.BigIntegerField(blank=True, null=True, db_column='sbid')
     _1d_pipeline_validation = models.CharField(blank=True, null=True, db_column='1d_pipeline_validation')
     single_SB_1D_pipeline = models.CharField(blank=True, null=True, db_column='single_sb_1d_pipeline')
     comments = models.TextField(blank=True, null=True, db_column='comments')
+    mfs_update = models.DateTimeField(blank=True, null=True)
+    mfs_state = models.TextField(blank=True, null=True)
+    cube_update = models.DateTimeField(blank=True, null=True)
+    cube_state = models.TextField(blank=True, null=True)
 
     class Meta:
-        verbose_name = "Observation 1D Pipeline - Band 1"
+        verbose_name = "Observation States - Band 1"
         managed = False
-        db_table = 'observation_1d_pipeline_band1'
+        db_table = 'observation_state_band1'
 
-class ObservationBand2_1DPipelineValidation(models.Model):
+class ObservationStatesBand2(models.Model):
     name = models.OneToOneField('survey.Observation', models.DO_NOTHING, db_column='name', to_field='name', primary_key=True)
     sbid = models.BigIntegerField(blank=True, null=True, db_column='sbid')
     _1d_pipeline_validation = models.CharField(blank=True, null=True, db_column='1d_pipeline_validation')
     single_SB_1D_pipeline = models.CharField(blank=True, null=True, db_column='single_sb_1d_pipeline')
     comments = models.TextField(blank=True, null=True, db_column='comments')
+    mfs_update = models.DateTimeField(blank=True, null=True)
+    mfs_state = models.TextField(blank=True, null=True)
+    cube_update = models.DateTimeField(blank=True, null=True)
+    cube_state = models.TextField(blank=True, null=True)
 
     class Meta:
-        verbose_name = "Observation 1D Pipeline - Band 2"
+        verbose_name = "Observation States - Band 2"
         managed = False
-        db_table = 'observation_1d_pipeline_band2'
+        db_table = 'observation_state_band2'
 
-class SurveyTiles_3DPipelineBand1(models.Model):
+class TileStatesBand1(models.Model):
     tile_id = models.OneToOneField('survey.Tile', models.DO_NOTHING, db_column='tile_id', to_field='tile', primary_key=True)
     _3d_pipeline = models.CharField(blank=True, null=True, db_column='3d_pipeline')
     _3d_pipeline_val = models.CharField( blank=True, null=True, choices=VALIDATED_STATE, db_column='3d_pipeline_val')
@@ -88,11 +96,11 @@ class SurveyTiles_3DPipelineBand1(models.Model):
     _3d_val_link = models.CharField(blank=True, null=True, db_column='3d_val_link')
     _3d_val_comments = models.TextField(blank=True, null=True, db_column='3d_val_comments')
     class Meta:
-        verbose_name = "Survey Tiles 3D Pipeline - Band 1"
+        verbose_name = "Tile States - Band 1"
         managed = False
         db_table = 'tile_3d_pipeline_band1'
 
-class SurveyTiles_3DPipelineBand2(models.Model):
+class TileStatesBand2(models.Model):
     tile_id = models.OneToOneField('survey.Tile', models.DO_NOTHING, db_column='tile_id', to_field='tile', primary_key=True)
     _3d_pipeline = models.CharField(blank=True, null=True, db_column='3d_pipeline')
     _3d_pipeline_val = models.CharField( blank=True, null=True, choices=VALIDATED_STATE, db_column='3d_pipeline_val')
@@ -101,6 +109,6 @@ class SurveyTiles_3DPipelineBand2(models.Model):
     _3d_val_link = models.CharField(blank=True, null=True, db_column='3d_val_link')
     _3d_val_comments = models.TextField(blank=True, null=True, db_column='3d_val_comments')
     class Meta:
-        verbose_name = "Survey Tiles 3D Pipeline - Band 2"
+        verbose_name = "Tile States - Band 2"
         managed = False
         db_table = 'tile_3d_pipeline_band2'

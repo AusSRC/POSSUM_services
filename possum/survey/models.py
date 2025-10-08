@@ -41,10 +41,6 @@ class Observation(models.Model):
     processed_date = models.DateTimeField(blank=True, null=True)
     validated_date = models.DateTimeField(blank=True, null=True)
     validated_state = models.TextField(blank=True, null=True)
-    mfs_update = models.DateTimeField(blank=True, null=True)
-    mfs_state = models.TextField(blank=True, null=True)
-    cube_update = models.DateTimeField(blank=True, null=True)
-    cube_state = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return str(self.name)
@@ -60,16 +56,6 @@ class Tile(models.Model):
     dec_deg = models.DecimalField(max_digits=65535, decimal_places=4, blank=True, null=True)
     gl = models.DecimalField(max_digits=65535, decimal_places=4, blank=True, null=True)
     gb = models.DecimalField(max_digits=65535, decimal_places=4, blank=True, null=True)
-    oned_pipeline_main_band1 = models.DateTimeField(db_column='1d_pipeline_main_band1', blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
-    oned_pipeline_borders_band1 = models.DateTimeField(db_column='1d_pipeline_borders_band1', blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
-    threed_pipeline_band1 = models.DateTimeField(db_column='3d_pipeline_band1', blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
-    oned_pipeline_main_band2 = models.DateTimeField(db_column='1d_pipeline_main_band2', blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
-    oned_pipeline_borders_band2 = models.DateTimeField(db_column='1d_pipeline_borders_band2', blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
-    threed_pipeline_band2 = models.DateTimeField(db_column='3d_pipeline_band2', blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
-    band1_cube_state = models.TextField(blank=True, null=True)
-    band1_mfs_state = models.TextField(blank=True, null=True)
-    band2_mfs_state = models.TextField(blank=True, null=True)
-    band2_cube_state = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return str(self.tile)
