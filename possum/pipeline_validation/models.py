@@ -32,6 +32,7 @@ class PartialTilePipelineRegionsBand1(models.Model):
     _1d_pipeline = models.CharField(choices=PIPELINE_STATE, db_column='1d_pipeline', blank=True, null=True)
 
     class Meta:
+        verbose_name = "Partial Tile 1D Pipeline - Band 1"
         managed = False
         db_table = 'partial_tile_1d_pipeline_band1'
         unique_together = (('observation', 'sbid', 'tile1', 'tile2', 'tile3', 'tile4', 'type'),)
@@ -49,6 +50,7 @@ class PartialTilePipelineRegionsBand2(models.Model):
     _1d_pipeline = models.CharField(choices=PIPELINE_STATE, db_column='1d_pipeline', blank=True, null=True)
 
     class Meta:
+        verbose_name = "Partial Tile 1D Pipeline - Band 2"
         managed = False
         db_table = 'partial_tile_1d_pipeline_band2'
         unique_together = (('observation', 'sbid', 'tile1', 'tile2', 'tile3', 'tile4', 'type'),)
@@ -61,6 +63,7 @@ class ObservationBand1_1DPipelineValidation(models.Model):
     comments = models.TextField(blank=True, null=True, db_column='comments')
 
     class Meta:
+        verbose_name = "Observation 1D Pipeline - Band 1"
         managed = False
         db_table = 'observation_1d_pipeline_band1'
 
@@ -72,6 +75,7 @@ class ObservationBand2_1DPipelineValidation(models.Model):
     comments = models.TextField(blank=True, null=True, db_column='comments')
 
     class Meta:
+        verbose_name = "Observation 1D Pipeline - Band 2"
         managed = False
         db_table = 'observation_1d_pipeline_band2'
 
@@ -84,6 +88,7 @@ class SurveyTiles_3DPipelineBand1(models.Model):
     _3d_val_link = models.CharField(blank=True, null=True, db_column='3d_val_link')
     _3d_val_comments = models.TextField(blank=True, null=True, db_column='3d_val_comments')
     class Meta:
+        verbose_name = "Survey Tiles 3D Pipeline - Band 1"
         managed = False
         db_table = 'tile_3d_pipeline_band1'
 
@@ -96,5 +101,6 @@ class SurveyTiles_3DPipelineBand2(models.Model):
     _3d_val_link = models.CharField(blank=True, null=True, db_column='3d_val_link')
     _3d_val_comments = models.TextField(blank=True, null=True, db_column='3d_val_comments')
     class Meta:
+        verbose_name = "Survey Tiles 3D Pipeline - Band 2"
         managed = False
         db_table = 'tile_3d_pipeline_band2'
