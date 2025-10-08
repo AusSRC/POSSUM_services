@@ -1,6 +1,6 @@
 from django.contrib import admin
-from .models import (ObservationBand1_1DPipelineValidation, ObservationBand2_1DPipelineValidation, 
-                     PartialTilePipelineRegionsBand1, PartialTilePipelineRegionsBand2, 
+from .models import (ObservationBand1_1DPipelineValidation, ObservationBand2_1DPipelineValidation,
+                     PartialTilePipelineRegionsBand1, PartialTilePipelineRegionsBand2,
                      SurveyTiles_3DPipelineBand1,  SurveyTiles_3DPipelineBand2)
 
 class PartialTile1DBand1Admin(admin.ModelAdmin):
@@ -69,7 +69,7 @@ class SurveyTiles3DPipelineBand1Admin(admin.ModelAdmin):
     list_display = [field.name for field in SurveyTiles_3DPipelineBand1._meta.get_fields()]
     search_fields = ('tile_id__tile', '_3d_pipeline', '_3d_pipeline_ingest', '_3d_val_comments',
                      '_3d_pipeline_val', '_3d_pipeline_validator', '_3d_val_link')
-    
+
     def has_add_permission(self, request, obj=None):
         return False
 
@@ -82,12 +82,13 @@ class SurveyTiles3DPipelineBand1Admin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super(SurveyTiles3DPipelineBand1Admin, self).get_queryset(request)
         return qs.filter()
+
 class SurveyTiles3DPipelineBand2Admin(admin.ModelAdmin):
     readonly_fields = ('tile_id', '_3d_pipeline', '_3d_pipeline_ingest', '_3d_val_link')
     list_display = [field.name for field in SurveyTiles_3DPipelineBand2._meta.get_fields()]
     search_fields = ('tile_id__tile', '_3d_pipeline', '_3d_pipeline_ingest', '_3d_val_comments',
                      '_3d_pipeline_val', '_3d_pipeline_validator', '_3d_val_link')
-    
+
     def has_add_permission(self, request, obj=None):
         return False
 
@@ -99,7 +100,7 @@ class SurveyTiles3DPipelineBand2Admin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super(SurveyTiles3DPipelineBand2Admin, self).get_queryset(request)
-        return qs.filter()    
+        return qs.filter()
 
 admin.site.register(PartialTilePipelineRegionsBand1, PartialTile1DBand1Admin)
 admin.site.register(PartialTilePipelineRegionsBand2, PartialTile1DBand2Admin)
