@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.db.models.aggregates import Count
 from django.db.models import Q, Count, Case, When, BooleanField
 
-from .models import Observation, AssociatedTile, FieldTile, Tile, Validation
+from .models import Observation, AssociatedTile, Tile, Validation
 
 
 def pipeline_state_colour(state):
@@ -37,7 +37,7 @@ class Band1FieldTileAdminInline(admin.TabularInline):
     readonly_fields = ('obs_start', 'sbid', 'processed_date', 'validated_date',
                        'validated_state', 'mfs_update', 'mfs_state', 'cube_update', 'cube_state')
 
-    model = FieldTile
+    model = AssociatedTile
 
     can_delete = False
     can_add = False
@@ -114,7 +114,7 @@ class Band2FieldTileAdminInline(admin.TabularInline):
     readonly_fields = ('obs_start', 'sbid', 'processed_date', 'validated_date',
                        'validated_state', 'mfs_update', 'mfs_state', 'cube_update', 'cube_state')
 
-    model = FieldTile
+    model = AssociatedTile
 
     can_delete = False
     can_add = False

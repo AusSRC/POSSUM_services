@@ -12,7 +12,6 @@ Insert or update database entries for the obs_id -> tile mapping in the POSSUM s
 
 * `tile`
 * `associated_tile`
-* `field_tile`
 
 It ingests a large number of files, each containing the following sort of information (see below) and uses the information in the filename to indicate which observation. For example, the filename [`EMU-FULL_2317+04B_1.50d.csv`](EMU_full_survey/mapping_1.5deg/EMU-FULL_2317+04B_1.50d.csv) might contain:
 
@@ -50,7 +49,7 @@ PIXELS,CRPIX_RA,CRPIX_DEC,CRVAL_RA [deg],CRVAL_DEC [deg]
 A new script (`update_tilemap.py`) for a second request from the POSSUM team. This script will:
 
 * Assume that the observations and pixel (`possum.observation` and `possum.tile` tables respectively) are already populated
-* You have two new files for the EMU (band 1) and WALLABY (band 2) tile maps (`possum.associated_tile` and `possum.field_tile` maps)
+* You have two new files for the EMU (band 1) and WALLABY (band 2) tile maps (`possum.associated_tile` maps)
 * The table mapping entries exist and need to be overwritten
 
 An example snippet from this file is provided by Cameron Van Eck (cameron.vaneck@anu.edu.au):
@@ -71,6 +70,6 @@ PIXEL,SB1,SB2,SB3,SB4,SB5,SB6,SB7,SB8,SB9,SB10
 
 This code will (in a transaction):
 
-* Clear the `associated_tile` and `field_tile` tables
+* Clear the `associated_tile` tables
 * Insert the new entries
 * Identify tiles without associated sbids and log them

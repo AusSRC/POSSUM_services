@@ -23,19 +23,7 @@ class AssociatedTile(models.Model):
         managed = False
         db_table = 'associated_tile'
         unique_together = (('name', 'tile'),)
-
-
-class FieldTile(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    tile = models.ForeignKey('Tile', models.DO_NOTHING, db_column='tile', to_field='tile', blank=True, null=True)
-    name = models.ForeignKey('Observation', models.DO_NOTHING, db_column='name', to_field='name', blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'field_tile'
-        unique_together = (('name', 'tile'),)
-
-
+        
 class Observation(models.Model):
     name = models.TextField(primary_key=True)
     ra_deg = models.DecimalField(max_digits=65535, decimal_places=4, blank=True, null=True)
@@ -59,7 +47,7 @@ class Observation(models.Model):
     cube_state = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
     class Meta:
         managed = False
