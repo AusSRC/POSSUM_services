@@ -224,12 +224,12 @@ class TileAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         qs = qs.annotate(
-            band1_count=Count('fieldtile',
-                              filter=Q(fieldtile__name__band=1))).order_by('band1_count')
+            band1_count=Count('associatedtile',
+                              filter=Q(associatedtile__name__band=1))).order_by('band1_count')
 
         qs = qs.annotate(
-            band2_count=Count('fieldtile',
-                              filter=Q(fieldtile__name__band=2))).order_by('band2_count')
+            band2_count=Count('associatedtile',
+                              filter=Q(associatedtile__name__band=2))).order_by('band2_count')
 
         return qs
 
