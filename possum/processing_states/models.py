@@ -102,7 +102,7 @@ class TileStatesBand1(models.Model):
     class Meta:
         verbose_name = "Tile States - Band 1"
         managed = False
-        db_table = 'tile_3d_pipeline_band1'
+        db_table = 'tile_state_band1'
 
 class TileStatesBand2(models.Model):
     tile_id = models.OneToOneField('survey.Tile', models.DO_NOTHING, db_column='tile_id', to_field='tile', primary_key=True)
@@ -117,4 +117,4 @@ class TileStatesBand2(models.Model):
     class Meta:
         verbose_name = "Tile States - Band 2"
         managed = False
-        db_table = 'tile_3d_pipeline_band2'
+        db_table = 'tile_state_band2'

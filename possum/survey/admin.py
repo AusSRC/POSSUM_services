@@ -175,7 +175,6 @@ class ValidationAdmin(admin.ModelAdmin):
 
 class ObservationAdmin(admin.ModelAdmin):
     inlines = [AssociatedTileAdminInline, ValidationAdminInline]
-    ordering = ('name')
 
     list_display = ('name', 'ra_deg', 'dec_deg', 'band', 'obs_start', 'sbid', 'processed_date', 'validated_date',
                     'validated_state')

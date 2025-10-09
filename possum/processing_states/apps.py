@@ -1,7 +1,7 @@
 from django.apps import AppConfig
 
 
-class PipelineValidationConfig(AppConfig):
+class ProcessingStatesConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'pipeline_validation'
+    name = 'processing_states'
     verbose_name = 'Processing States'
