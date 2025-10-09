@@ -4,6 +4,8 @@ from django.db import models
 VALIDATED_STATE = (
         ('Good', 'Good'),
         ('Bad', 'Bad'),
+        ('Running', 'Running'),
+        ('Failed', 'Failed'),
         ('WaitingForValidation', 'WaitingForValidation'))
 
 PIPELINE_STATE = (
@@ -89,7 +91,7 @@ class ObservationStatesBand2(models.Model):
 
 class TileStatesBand1(models.Model):
     tile_id = models.OneToOneField('survey.Tile', models.DO_NOTHING, db_column='tile_id', to_field='tile', primary_key=True)
-    _3d_pipeline = models.CharField(blank=True, null=True, db_column='3d_pipeline')
+    _3d_pipeline = models.DateTimeField(blank=True, null=True, db_column='3d_pipeline')
     _3d_pipeline_val = models.CharField( blank=True, null=True, choices=VALIDATED_STATE, db_column='3d_pipeline_val')
     _3d_pipeline_ingest = models.CharField(blank=True, null=True, db_column='3d_pipeline_ingest')
     _3d_pipeline_validator = models.CharField(blank=True, null=True, db_column='3d_pipeline_validator')

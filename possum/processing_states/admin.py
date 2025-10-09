@@ -214,7 +214,7 @@ class TileStatesBand2Admin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super(TileStatesBand2Admin, self).get_queryset(request)
-        qs = qs.order_by('mfs_complete', 'cube_complete')
+        return qs.filter()
 
 admin.site.register(PartialTilePipelineRegionsBand1, PartialTile1DBand1Admin)
 admin.site.register(PartialTilePipelineRegionsBand2, PartialTile1DBand2Admin)
