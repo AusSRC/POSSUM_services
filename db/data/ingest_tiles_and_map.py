@@ -46,11 +46,6 @@ async def upsert_file(db_pool, file):
                         obs_name, tile_id
                     )
                     print(res)
-                    res = await conn.execute(
-                        'INSERT INTO possum.field_tile (name, tile) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-                        obs_name, tile_id
-                    )
-                    print(res)
             print("\n")
     return
 

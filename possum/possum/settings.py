@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'sslserver',
     'social_django',
     'survey',
-    'pipeline_validation'
+    'processing_states'
 ]
 
 MIDDLEWARE = [
