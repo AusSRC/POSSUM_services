@@ -46,7 +46,6 @@ async def insert_tilemap(conn, filename, prefix):
             for o in obs_ids:
                 tile_maps.append((o, tile_id))
     await conn.executemany('INSERT INTO possum.associated_tile (name, tile) VALUES ($1, $2)', tile_maps)
-    await conn.executemany('INSERT INTO possum.field_tile (name, tile) VALUES ($1, $2)', tile_maps)
     print(f'Insert file {filename} complete')
     return
 
@@ -78,12 +77,10 @@ async def main(argv):
     db_pool = await asyncpg.create_pool(dsn=None, **dsn)
     async with db_pool.acquire() as conn:
         async with conn.transaction():
-            print('Clearing tables (associated_tile, field_tile)')
+            print('Clearing tables (associated_tile)')
             await conn.execute('TRUNCATE possum.associated_tile;')
-            await conn.execute('TRUNCATE possum.field_tile;')
             print('Resetting sequences')
             await conn.execute('ALTER sequence possum.associated_tile_id_seq RESTART WITH 1;')
-            await conn.execute('ALTER sequence possum.field_tile_id_seq RESTART WITH 1;')
             print('Tables cleared, sequences reset')
 
             # ingest all tiles (skip if exists)

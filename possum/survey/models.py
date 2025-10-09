@@ -23,19 +23,7 @@ class AssociatedTile(models.Model):
         managed = False
         db_table = 'associated_tile'
         unique_together = (('name', 'tile'),)
-
-
-class FieldTile(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    tile = models.ForeignKey('Tile', models.DO_NOTHING, db_column='tile', to_field='tile', blank=True, null=True)
-    name = models.ForeignKey('Observation', models.DO_NOTHING, db_column='name', to_field='name', blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'field_tile'
-        unique_together = (('name', 'tile'),)
-
-
+        
 class Observation(models.Model):
     name = models.TextField(primary_key=True)
     ra_deg = models.DecimalField(max_digits=65535, decimal_places=4, blank=True, null=True)
@@ -53,13 +41,9 @@ class Observation(models.Model):
     processed_date = models.DateTimeField(blank=True, null=True)
     validated_date = models.DateTimeField(blank=True, null=True)
     validated_state = models.TextField(blank=True, null=True)
-    mfs_update = models.DateTimeField(blank=True, null=True)
-    mfs_state = models.TextField(blank=True, null=True)
-    cube_update = models.DateTimeField(blank=True, null=True)
-    cube_state = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
     class Meta:
         managed = False
@@ -72,16 +56,6 @@ class Tile(models.Model):
     dec_deg = models.DecimalField(max_digits=65535, decimal_places=4, blank=True, null=True)
     gl = models.DecimalField(max_digits=65535, decimal_places=4, blank=True, null=True)
     gb = models.DecimalField(max_digits=65535, decimal_places=4, blank=True, null=True)
-    oned_pipeline_main_band1 = models.DateTimeField(db_column='1d_pipeline_main_band1', blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
-    oned_pipeline_borders_band1 = models.DateTimeField(db_column='1d_pipeline_borders_band1', blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
-    threed_pipeline_band1 = models.DateTimeField(db_column='3d_pipeline_band1', blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
-    oned_pipeline_main_band2 = models.DateTimeField(db_column='1d_pipeline_main_band2', blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
-    oned_pipeline_borders_band2 = models.DateTimeField(db_column='1d_pipeline_borders_band2', blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
-    threed_pipeline_band2 = models.DateTimeField(db_column='3d_pipeline_band2', blank=True, null=True)  # Field renamed because it wasn't a valid Python identifier.
-    band1_cube_state = models.TextField(blank=True, null=True)
-    band1_mfs_state = models.TextField(blank=True, null=True)
-    band2_mfs_state = models.TextField(blank=True, null=True)
-    band2_cube_state = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return str(self.tile)
