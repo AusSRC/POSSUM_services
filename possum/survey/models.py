@@ -37,7 +37,7 @@ class Observation(models.Model):
     footprint = models.TextField(blank=True, null=True)
     band = models.SmallIntegerField(blank=True, null=True)
     obs_start = models.DateTimeField(blank=True, null=True)
-    sbid = models.BigIntegerField(blank=True, null=True)
+    sbid = models.BigIntegerField(blank=True, null=True, unique=True)
     processed_date = models.DateTimeField(blank=True, null=True)
     validated_date = models.DateTimeField(blank=True, null=True)
     validated_state = models.TextField(blank=True, null=True)

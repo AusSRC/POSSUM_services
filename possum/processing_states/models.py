@@ -59,7 +59,7 @@ class PartialTilePipelineRegionsBand2(models.Model):
 
 class ObservationStatesBand1(models.Model):
     name = models.OneToOneField('survey.Observation', models.DO_NOTHING, db_column='name', to_field='name', primary_key=True)
-    sbid = models.BigIntegerField(blank=True, null=True, db_column='sbid')
+    sbid = models.ForeignKey('survey.Observation', to_field="sbid", db_column='sbid', on_delete=models.DO_NOTHING, related_name='band1_states')
     _1d_pipeline_validation = models.CharField(blank=True, null=True, db_column='1d_pipeline_validation')
     single_SB_1D_pipeline = models.CharField(blank=True, null=True, db_column='single_sb_1d_pipeline')
     comments = models.TextField(blank=True, null=True, db_column='comments')
@@ -75,7 +75,7 @@ class ObservationStatesBand1(models.Model):
 
 class ObservationStatesBand2(models.Model):
     name = models.OneToOneField('survey.Observation', models.DO_NOTHING, db_column='name', to_field='name', primary_key=True)
-    sbid = models.BigIntegerField(blank=True, null=True, db_column='sbid')
+    sbid = models.ForeignKey('survey.Observation', to_field="sbid", db_column='sbid', on_delete=models.DO_NOTHING, related_name='band2_states')
     _1d_pipeline_validation = models.CharField(blank=True, null=True, db_column='1d_pipeline_validation')
     single_SB_1D_pipeline = models.CharField(blank=True, null=True, db_column='single_sb_1d_pipeline')
     comments = models.TextField(blank=True, null=True, db_column='comments')
