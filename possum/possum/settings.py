@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'sslserver',
     'social_django',
-    'survey'
+    'survey',
+    'processing_states'
 ]
 
 MIDDLEWARE = [
@@ -61,7 +62,7 @@ AUTHENTICATION_BACKENDS = (
 )
 
 ## Social Auth
-LOGIN_URL = '/oauth/login/keycloak'
+LOGIN_URL = '/admin/login/'
 LOGIN_REDIRECT_URL = '/admin'
 LOGOUT_URL = env('LOGOUT_URL', default='/logout')
 
@@ -192,3 +193,11 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'survey/templates/')]
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# User password reset email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER') #github secrets
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = 'possum.database@gmail.com'
