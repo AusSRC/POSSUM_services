@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.db.models.aggregates import Count
-from django.db.models import Q, Count, Case, When, BooleanField
+from django.db.models import Q, Count
 
 from .models import Observation, AssociatedTile, Tile, Validation
 

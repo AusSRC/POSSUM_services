@@ -46,22 +46,12 @@ class PartialTile1DBaseAdmin(admin.ModelAdmin):
         ).order_by('complete_first', '-_1d_pipeline')
         # default ordering: Completed, Running, Failed, NULL last
 
-class PartialTile1DBand1Admin(PartialTile1DBaseAdmin):
-    def get_queryset(self, request):
-        qs = super(PartialTile1DBand1Admin, self).get_queryset(request)
-        return qs.filter()
-
-class PartialTile1DBand2Admin(PartialTile1DBaseAdmin):
-    def get_queryset(self, request):
-        qs = super(PartialTile1DBand2Admin, self).get_queryset(request)
-        return qs.filter()
-
 class ObservationStatesBaseAdmin(admin.ModelAdmin):
     # only comments can be edited
-    readonly_fields = ('name', 'sbid', '_1d_pipeline_validation', 'single_SB_1D_pipeline', 'mfs_state', 'mfs_update', 'cube_state', 'cube_update')
-    list_display = ('name', 'sbid', '_1d_pipeline_validation', 'single_SB_1D_pipeline', 'comments',
-                    'colour_mfs_state', 'mfs_update', 'colour_cube_state', 'cube_update')
+    readonly_fields = ('name', 'sbid', '_1d_pipeline_validation', 'single_SB_1D_pipeline', 'colour_mfs_state', 'mfs_update', 'colour_cube_state', 'cube_update')    
     search_fields = ('name__name', 'name__sbid', '_1d_pipeline_validation', 'single_SB_1D_pipeline', 'mfs_state', 'mfs_update', 'cube_state', 'cube_update')
+    fields = ('name', 'sbid', '_1d_pipeline_validation', 'single_SB_1D_pipeline', 'comments', 'colour_mfs_state', 'mfs_update', 'colour_cube_state', 'cube_update')
+    list_display = fields
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -109,22 +99,28 @@ class ObservationStatesBaseAdmin(admin.ModelAdmin):
         ).order_by('complete_first', '-single_SB_1D_pipeline', '-cube_state', '-mfs_state')
         # default ordering: Completed, Running, Failed, NULL last
 
-class ObservationStatesBand1Admin(ObservationStatesBaseAdmin):
-    def get_queryset(self, request):
-        qs = super(ObservationStatesBand1Admin, self).get_queryset(request)
-        return qs.filter()
-
-class ObservationStatesBand2Admin(ObservationStatesBaseAdmin):
-    def get_queryset(self, request):
-        qs = super(ObservationStatesBand2Admin, self).get_queryset(request)
-        return qs.filter()
 class TileStatesBaseAdmin(admin.ModelAdmin):
     # Make sure 3d_val_comments can be updated
-    readonly_fields = ('tile_id', '_3d_pipeline', '_3d_pipeline_ingest', '_3d_val_link',
-                       'mfs_state', 'cube_state', 'colour_mfs_state', 'colour_cube_state')
+    readonly_fields = ('tile_id', '_3d_pipeline', '_3d_pipeline_ingest', '_3d_val_url',
+                       'colour_mfs_state', 'colour_cube_state')
     search_fields = ('tile_id__tile', '_3d_pipeline', '_3d_pipeline_val',
                      '_3d_pipeline_ingest', '_3d_pipeline_validator', '_3d_val_link',
                      '_3d_val_comments', 'mfs_state', 'cube_state')
+    # Make sure 3d_val_link appears as links, and the colour coding works for mfs_state and cube_state
+    fields = ('tile_id', '_3d_pipeline', '_3d_pipeline_val',
+                     '_3d_pipeline_ingest', '_3d_pipeline_validator', '_3d_val_url',
+                     '_3d_val_comments', 'colour_mfs_state', 'colour_cube_state')
+    # ditto for the list view
+    list_display = fields
+
+    def _3d_val_url(self, obj):
+        url = obj._3d_val_link
+        if not url is None and url.startswith('http'):
+            return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+        return url
+
+    _3d_val_url.short_description = '3d val link'
+    _3d_val_url.admin_order_field = '_3d_val_link'
 
     def colour_cube_state(self, obj):
         state = obj.cube_state
@@ -172,17 +168,11 @@ class TileStatesBaseAdmin(admin.ModelAdmin):
                 output_field=IntegerField()
             )
         ).order_by('complete_first')
-    # default ordering: WGood, Bad, Running, Failed, aitingForValidation, NULL last
+    # default ordering: WGood, Bad, Running, Failed, WaitingForValidation, NULL last
 
-class TileStatesBand1Admin(TileStatesBaseAdmin):
-    list_display = [field.name for field in TileStatesBand1._meta.get_fields()]
-
-class TileStatesBand2Admin(TileStatesBaseAdmin):
-    list_display = [field.name for field in TileStatesBand2._meta.get_fields()]
-
-admin.site.register(PartialTilePipelineRegionsBand1, PartialTile1DBand1Admin)
-admin.site.register(PartialTilePipelineRegionsBand2, PartialTile1DBand2Admin)
-admin.site.register(ObservationStatesBand1, ObservationStatesBand1Admin)
-admin.site.register(ObservationStatesBand2, ObservationStatesBand2Admin)
-admin.site.register(TileStatesBand1, TileStatesBand1Admin)
-admin.site.register(TileStatesBand2, TileStatesBand2Admin)
+admin.site.register(PartialTilePipelineRegionsBand1, PartialTile1DBaseAdmin)
+admin.site.register(PartialTilePipelineRegionsBand2, PartialTile1DBaseAdmin)
+admin.site.register(ObservationStatesBand1, ObservationStatesBaseAdmin)
+admin.site.register(ObservationStatesBand2, ObservationStatesBaseAdmin)
+admin.site.register(TileStatesBand1, TileStatesBaseAdmin)
+admin.site.register(TileStatesBand2, TileStatesBaseAdmin)
