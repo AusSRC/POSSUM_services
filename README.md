@@ -37,9 +37,14 @@ DATABASE_NAME = possum
 DATABASE_USER = postgres
 DATABASE_PASSWORD = password
 SEARCH_PATH = public,possum
+
+EMAIL_HOST_USER =
+EMAIL_HOST_PASSORD =
 ```
 
-Where the Django secret key can be generated with various tools (e.g. https://djecrety.ir/). The second set of database environment variables are for connection to the database, so you will fill these out based on the settings of the deployment of the service above. This command will build both the `nginx` reverse proxy and the Django `web` services.
+Where the Django secret key can be generated with various tools (e.g. https://djecrety.ir/). The second set of database environment variables are for connection to the database, so you will fill these out based on the settings of the deployment of the service above. The third set is for sending user password reset emails (accessed by /password_reset URL). Currently this is generated with gmail app password. To enable a new user to login to Django, you must tick the "staff member" checkbox during registration.
+
+This command will build both the `nginx` reverse proxy and the Django `web` services.
 
 ```
 docker-compose up --build -d
