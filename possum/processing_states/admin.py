@@ -101,13 +101,13 @@ class ObservationStatesBaseAdmin(admin.ModelAdmin):
 
 class TileStatesBaseAdmin(admin.ModelAdmin):
     # Make sure 3d_val_comments can be updated
-    readonly_fields = ('tile_id', '_3d_pipeline', '_3d_pipeline_ingest', '_3d_val_url',
+    readonly_fields = ('tile', '_3d_pipeline', '_3d_pipeline_ingest', '_3d_val_url',
                        'colour_mfs_state', 'colour_cube_state')
-    search_fields = ('tile_id__tile', '_3d_pipeline', '_3d_pipeline_val',
+    search_fields = ('tile__tile', '_3d_pipeline', '_3d_pipeline_val',
                      '_3d_pipeline_ingest', '_3d_pipeline_validator', '_3d_val_link',
                      '_3d_val_comments', 'mfs_state', 'cube_state')
     # Make sure 3d_val_link appears as links, and the colour coding works for mfs_state and cube_state
-    fields = ('tile_id', '_3d_pipeline', '_3d_pipeline_val',
+    fields = ('tile', '_3d_pipeline', '_3d_pipeline_val',
                      '_3d_pipeline_ingest', '_3d_pipeline_validator', '_3d_val_url',
                      '_3d_val_comments', 'colour_mfs_state', 'colour_cube_state')
     # ditto for the list view
