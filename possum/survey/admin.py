@@ -180,7 +180,7 @@ class ObservationAdmin(admin.ModelAdmin):
                     'validated_state')
 
     readonly_fields = ('name', 'ra_deg', 'dec_deg', 'gl', 'gb', 'rotation',
-                       'duration', 'centrefreq', 'bandwidth', 'footprint', 'band','obs_start', 'sbid', 'processed_date', 'validated_date',
+                       'duration', 'centrefreq', 'bandwidth', 'footprint', 'band','obs_start', 'processed_date', 'validated_date',
                        'validated_state')
 
     fields = ('name', 'ra_deg', 'dec_deg', 'gl', 'gb', 'rotation', 'duration', 'centrefreq',
