@@ -14,6 +14,11 @@ PIPELINE_STATE = (
         ('Failed', 'Failed'),
         ('WaitingForValidation', 'WaitingForValidation'),)
 
+PIPELINE_VALIDATION_STATE = (
+        ('Completed', 'Completed'),
+        ('Running', 'Running'),
+        ('Failed', 'Failed'),)
+
 PARTIAL_TILES_TYPE = (
         ('center', 'center'),
         ('edge', 'edge'),
@@ -65,7 +70,7 @@ class PartialTilePipelineRegionsBand2(models.Model):
 
 class ObservationStatesBand1(models.Model):
     name = models.OneToOneField('survey.Observation', models.CASCADE, db_column='name', to_field='name', primary_key=True)
-    _1d_pipeline_validation = models.CharField(blank=True, null=True, db_column='1d_pipeline_validation')
+    _1d_pipeline_validation = models.CharField(blank=True, null=True, db_column='1d_pipeline_validation', choices=PIPELINE_VALIDATION_STATE)
     single_SB_1D_pipeline = models.CharField(blank=True, null=True, db_column='single_sb_1d_pipeline')
     comments = models.TextField(blank=True, null=True, db_column='comments')
     mfs_update = models.DateTimeField(blank=True, null=True)
@@ -80,7 +85,7 @@ class ObservationStatesBand1(models.Model):
 
 class ObservationStatesBand2(models.Model):
     name = models.OneToOneField('survey.Observation', models.CASCADE, db_column='name', to_field='name', primary_key=True)
-    _1d_pipeline_validation = models.CharField(blank=True, null=True, db_column='1d_pipeline_validation')
+    _1d_pipeline_validation = models.CharField(blank=True, null=True, db_column='1d_pipeline_validation', choices=PIPELINE_VALIDATION_STATE)
     single_SB_1D_pipeline = models.CharField(blank=True, null=True, db_column='single_sb_1d_pipeline')
     comments = models.TextField(blank=True, null=True, db_column='comments')
     mfs_update = models.DateTimeField(blank=True, null=True)
