@@ -72,7 +72,6 @@ class ObservationStatesBand1(models.Model):
     mfs_state = models.TextField(blank=True, null=True)
     cube_update = models.DateTimeField(blank=True, null=True)
     cube_state = models.TextField(blank=True, null=True)
-    sbid = models.CharField(blank=True, null=True, db_column='sbid')
 
     class Meta:
         verbose_name = "Band 1 - Observation State"
@@ -88,7 +87,6 @@ class ObservationStatesBand2(models.Model):
     mfs_state = models.TextField(blank=True, null=True)
     cube_update = models.DateTimeField(blank=True, null=True)
     cube_state = models.TextField(blank=True, null=True)
-    sbid = models.CharField(blank=True, null=True, db_column='sbid')
 
     class Meta:
         verbose_name = "Band 2 - Observation State"

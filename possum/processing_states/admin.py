@@ -48,9 +48,9 @@ class PartialTile1DBaseAdmin(admin.ModelAdmin):
 
 class ObservationStatesBaseAdmin(admin.ModelAdmin):
     # only comments can be edited
-    readonly_fields = ('name', 'sbid', '_1d_pipeline_validation', 'single_SB_1D_pipeline', 'colour_mfs_state', 'mfs_update', 'colour_cube_state', 'cube_update')    
+    readonly_fields = ('name', '_1d_pipeline_validation', 'single_SB_1D_pipeline', 'colour_mfs_state', 'mfs_update', 'colour_cube_state', 'cube_update')    
     search_fields = ('name__name', 'name__sbid', '_1d_pipeline_validation', 'single_SB_1D_pipeline', 'mfs_state', 'mfs_update', 'cube_state', 'cube_update')
-    fields = ('name', 'sbid', '_1d_pipeline_validation', 'single_SB_1D_pipeline', 'comments', 'colour_mfs_state', 'mfs_update', 'colour_cube_state', 'cube_update')
+    fields = ('name', '_1d_pipeline_validation', 'single_SB_1D_pipeline', 'comments', 'colour_mfs_state', 'mfs_update', 'colour_cube_state', 'cube_update')
     list_display = fields
 
     def has_add_permission(self, request, obj=None):
