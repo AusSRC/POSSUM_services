@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'social_django',
     'survey',
     'processing_states',
-    'rest_framework'
+    'rest_framework',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -211,4 +212,13 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+    # for api docs generation
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# for api docs generation
+SPECTACULAR_SETTINGS = {
+    "TITLE": "POSSUM Pipeline API",
+    "DESCRIPTION": "API for POSSUM 1D and 3D pipeline operations",
+    "VERSION": "1.0.0",
 }

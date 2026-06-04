@@ -9,3 +9,4 @@ django-sslserver
 djangorestframework==3.17.1
 djangorestframework-simplejwt
 dotenv
+drf-spectacular==0.28.0
