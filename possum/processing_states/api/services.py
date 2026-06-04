@@ -5,6 +5,8 @@ from astropy.table import Table
 from django.db import connection
 
 
+#---- Utilities methods -------
+
 def rows_to_table(rows, colnames=None, dtype=None):
     """
     Convert a list of row tuples and column names into an astropy Table.
@@ -91,6 +93,16 @@ def execute_query(
     return results
 
 
+def validate_band_number(band_number):
+    """
+    Making sure band number is valid
+    """
+    if str(band_number) not in ["1", "2"]:
+        raise ValueError("band_number must be either 1 or 2")
+
+
+# ---- 3D pipeline queries ----------
+
 def update_3d_pipeline_table(tile_number, band_number, status, column_name):
     """
     Update the 'tile_state_band{band_number}' table with given column name.
@@ -135,69 +147,6 @@ def update_3d_pipeline_table(tile_number, band_number, status, column_name):
         WHERE tile = %s; -- tile_number
     """
     return execute_update_query(query, (status, tile_number))
-
-
-def update_1d_pipeline_table(field_name, band_number, status, column_name):
-    """
-    Update the single_1d_pipeline_validation{band_number} column in the observation table.
-    This is to the equivalent to POSSUM pipeline status sheet: Survey Fields - Band {band_number}
-
-    Args:
-    field_name       : observation.field_name
-    band_number      : '1' or '2'
-    status (str): The status to set in the 'status_column' column.
-    column_name.     : The column to set
-
-    """
-    validate_band_number(band_number)
-    if column_name.lower() not in ("1d_pipeline_validation", "single_sb_1d_pipeline"):
-        raise ValueError(
-            f"Not allowed to update {column_name} in observation_state_band{band_number}!"
-        )
-    print(
-        f"Updating POSSUM observation_state_band{band_number} table with {column_name} status"
-    )
-    query = f"""
-        INSERT INTO possum.observation_state_band{band_number}
-        (name, "{column_name}")
-        VALUES (%s,%s) -- field_name, status
-        ON CONFLICT (name) DO UPDATE
-        SET "{column_name}" = %s; -- status
-    """
-    return execute_update_query(query, (field_name, status, status))
-
-
-def find_boundary_issues(sbid, observation, band_number):
-    """
-    Check if there are any entries in partial_tile_1d_pipeline for the given sbid and observation
-    where type indicates it crosses a projection boundary.
-    This is to identify potential issues with tiles that cross projection boundaries.
-    """
-    print(
-        f"Checking for projection boundary issues for SBID: {sbid}, Observation: {observation}"
-    )
-    query = f"""
-        SELECT EXISTS (
-            SELECT 1
-            FROM possum.partial_tile_1d_pipeline_band{band_number}
-            WHERE observation = %s AND LOWER(type) like '%%crosses projection boundary%%'
-        ) AS match_found;
-    """
-    results = execute_query(query, (observation,))
-    issues_found = results[0][0]
-    if issues_found is True:
-        print("Boundary issues found.")
-    else:
-        print("No boundary issues found.")
-    return issues_found
-
-
-def validate_band_number(band_number):
-    """
-    Making sure band number is valid
-    """
-    if str(band_number) not in ["1", "2"]:
-        raise ValueError("band_number must be either 1 or 2")
 
 
 def get_tiles_for_pipeline_run(band_number):
@@ -256,6 +205,63 @@ def get_tiles_for_ingest(band_number):
     results = execute_query(query)
     # flatten tile ids into an array
     return [row[0] for row in results]
+
+
+# ---- 1D pipeline queries ----------
+
+def update_1d_pipeline_table(field_name, band_number, status, column_name):
+    """
+    Update the single_1d_pipeline_validation{band_number} column in the observation table.
+    This is to the equivalent to POSSUM pipeline status sheet: Survey Fields - Band {band_number}
+
+    Args:
+    field_name       : observation.field_name
+    band_number      : '1' or '2'
+    status (str): The status to set in the 'status_column' column.
+    column_name.     : The column to set
+
+    """
+    validate_band_number(band_number)
+    if column_name.lower() not in ("1d_pipeline_validation", "single_sb_1d_pipeline"):
+        raise ValueError(
+            f"Not allowed to update {column_name} in observation_state_band{band_number}!"
+        )
+    print(
+        f"Updating POSSUM observation_state_band{band_number} table with {column_name} status"
+    )
+    query = f"""
+        INSERT INTO possum.observation_state_band{band_number}
+        (name, "{column_name}")
+        VALUES (%s,%s) -- field_name, status
+        ON CONFLICT (name) DO UPDATE
+        SET "{column_name}" = %s; -- status
+    """
+    return execute_update_query(query, (field_name, status, status))
+
+
+def find_boundary_issues(sbid, observation, band_number):
+    """
+    Check if there are any entries in partial_tile_1d_pipeline for the given sbid and observation
+    where type indicates it crosses a projection boundary.
+    This is to identify potential issues with tiles that cross projection boundaries.
+    """
+    print(
+        f"Checking for projection boundary issues for SBID: {sbid}, Observation: {observation}"
+    )
+    query = f"""
+        SELECT EXISTS (
+            SELECT 1
+            FROM possum.partial_tile_1d_pipeline_band{band_number}
+            WHERE observation = %s AND LOWER(type) like '%%crosses projection boundary%%'
+        ) AS match_found;
+    """
+    results = execute_query(query, (observation,))
+    issues_found = results[0][0]
+    if issues_found is True:
+        print("Boundary issues found.")
+    else:
+        print("No boundary issues found.")
+    return issues_found
 
 
 def update_partial_tile_1d_pipeline_status(
