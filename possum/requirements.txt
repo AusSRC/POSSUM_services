@@ -1,3 +1,4 @@
+astropy
 Django>=4.2,<5.0
 gunicorn
 psycopg2-binary
@@ -5,3 +6,6 @@ django-environ
 social-auth-app-django
 python-keycloak
 django-sslserver
+djangorestframework==3.17.1
+djangorestframework-simplejwt
+dotenv
