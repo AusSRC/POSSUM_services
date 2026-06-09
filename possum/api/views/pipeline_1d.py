@@ -4,7 +4,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
-from possum.processing_states.api.services import (
+from ..services import (
+    find_boundary_issues,
     update_partial_tile_1d_pipeline_status,
     get_partial_tiles_for_1d_pipeline_run,
     update_1d_pipeline_table,
@@ -84,8 +85,23 @@ def observations_non_edge_rows(request, band_number: int):
             {"error": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-    
 
+
+@api_view(["GET"])
+def boundary_issues(request, observation, band_number):
+    """
+    Returns True/False if boundary issues are found for the given observation
+    """
+    try:
+        data = find_boundary_issues(observation, band_number)
+        return Response(data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+   
 @api_view(["GET"])
 def fields_ready_single_sb_pipeline(request, band_number: int):
     """
@@ -116,31 +132,27 @@ def full_single_sb_pipeline_table(request, band_number: int):
         )        
         
 
-class Update1DPipelineAPI(APIView):
-    permission_classes = [IsAuthenticated]
+@api_view(["POST"])
+def update_1d_pipeline_table(request, band_number, column_name, field_name, status):
+    """
+    Update 1d_pipeline_validation field in observation_state_band{band_number} table    
+    """
+    try:
+        rows = update_1d_pipeline_table(
+            field_name=field_name,
+            band_number=band_number,
+            status=status,
+            column_name=column_name
+        )
 
-    def post(self, request, band_number):
+        return Response({
+            "success": True,
+            "rows_updated": rows,
+        })
 
-        try:
-            field_name = request.data["field_name"]
-            status_value = request.data["status"]
-            column_name = request.data["column_name"]
-
-            rows = update_1d_pipeline_table(
-                field_name=field_name,
-                band_number=band_number,
-                status=status_value,
-                column_name=column_name,
-            )
-
-            return Response({
-                "success": True,
-                "rows_updated": rows,
-            })
-
-        except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 

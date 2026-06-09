@@ -21,7 +21,7 @@ urlpatterns += [
     path('', RedirectView.as_view(url=reverse_lazy('admin:index'))),
     path("admin/", admin.site.urls),
     path("oauth/", include('social_django.urls', namespace="social")),
-    path("api/", include("processing_states.api.urls")),
+    path("api/", include("api.urls")),
     # Password reset links
     path('password_reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
     path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),

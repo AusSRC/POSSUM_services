@@ -99,7 +99,7 @@ def validate_band_number(band_number):
     """
     if str(band_number) not in ["1", "2"]:
         raise ValueError("band_number must be either 1 or 2")
-
+   
 
 # ---- 3D pipeline queries ----------
 
@@ -226,6 +226,9 @@ def update_1d_pipeline_table(field_name, band_number, status, column_name):
         raise ValueError(
             f"Not allowed to update {column_name} in observation_state_band{band_number}!"
         )
+    # Make sure 'null' String becomes Null. Because you cannot enter NULL as is in the browser
+    if status and status.strip().lower() == "null":
+        status = None
     print(
         f"Updating POSSUM observation_state_band{band_number} table with {column_name} status"
     )
@@ -239,14 +242,14 @@ def update_1d_pipeline_table(field_name, band_number, status, column_name):
     return execute_update_query(query, (field_name, status, status))
 
 
-def find_boundary_issues(sbid, observation, band_number):
+def find_boundary_issues(observation, band_number):
     """
-    Check if there are any entries in partial_tile_1d_pipeline for the given sbid and observation
+    Check if there are any entries in partial_tile_1d_pipeline for the given observation
     where type indicates it crosses a projection boundary.
     This is to identify potential issues with tiles that cross projection boundaries.
     """
     print(
-        f"Checking for projection boundary issues for SBID: {sbid}, Observation: {observation}"
+        f"Checking for projection boundary issues for Observation: {observation}"
     )
     query = f"""
         SELECT EXISTS (
@@ -435,7 +438,7 @@ def get_fields_ready_single_SB_pipeline(band_number) -> Table:
     returns a table with columns ["name", "sbid"]
     """
     sql = f"""
-    SELECT name, sbid FROM possum.observation_state_band{band_number}
+    SELECT name FROM possum.observation_state_band{band_number}
     WHERE ("single_sb_1d_pipeline" IS NULL or "single_sb_1d_pipeline" = '')
     AND UPPER("cube_state") = 'COMPLETED';
     """

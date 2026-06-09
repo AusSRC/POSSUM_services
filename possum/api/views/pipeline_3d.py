@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
-from possum.processing_states.api.services import (
+from ..services import (
     get_tiles_for_ingest,
     get_tiles_for_pipeline_run,
     update_3d_pipeline_table,
@@ -56,17 +56,13 @@ class TilesReadyFor3DPipelineAPI(APIView):
 class Update3DPipelineAPI(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, band_number):
+    def post(self, request, band_number, column_name, tile_number, status):
 
         try:
-            tile_number = request.data["tile_number"]
-            status_value = request.data["status"]
-            column_name = request.data["column_name"]
-
             rows = update_3d_pipeline_table(
                 tile_number=tile_number,
                 band_number=band_number,
-                status=status_value,
+                status=status,
                 column_name=column_name,
             )
 
