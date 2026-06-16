@@ -1,8 +1,6 @@
 """
-Database query functions for interacting with the ausSRC database.
+Database query functions for 1d pipeline specific queries
 """
-from astropy.table import Table
-from django.db import connection
 from .utils import *
 
 def find_boundary_issues(observation, band_number):
@@ -385,7 +383,7 @@ def get_observations_non_edge_rows(band_number):
     return execute_query(sql)
 
 
-def get_fields_ready_single_SB_pipeline(band_number) -> Table:
+def get_fields_ready_single_SB_pipeline(band_number):
     """
     ## Check fields that could be added to partial tile database
     Get fields that are ready for 1D Partial Tile pipeline processing:
@@ -400,24 +398,21 @@ def get_fields_ready_single_SB_pipeline(band_number) -> Table:
     WHERE ("single_sb_1d_pipeline" IS NULL or "single_sb_1d_pipeline" = '')
     AND UPPER("cube_state") = 'COMPLETED';
     """
-    rows, colnames = execute_query(sql, return_colnames=True)
-    return rows_to_table(rows, colnames=colnames)
+    return execute_query(sql)
 
 
 
-def get_full_table_single_SB_pipeline(band_number, as_table=True) -> list | Table:
+def get_full_table_single_SB_pipeline(band_number):
     """
-    Get single_sb_1d_pipeline status as either raw rows or an astropy Table.
+    Get single_sb_1d_pipeline status as either raw rows 
     """
     validate_band_number(band_number)
 
     sql = f"""
         SELECT * FROM possum.observation_state_band{band_number}
     """
-    rows, colnames = execute_query(sql, return_colnames=True)
+    rows = execute_query(sql)
 
-    if as_table:
-        return rows_to_table(rows, colnames=colnames)
     return rows
 
 def get_observation_by_name(band_number, name):
@@ -470,7 +465,7 @@ def get_1d_partial_tiles_completed(band_number):
             SELECT * FROM possum.observation_state_band{band_number}
             WHERE LOWER("1d_pipeline_validation") = 'completed'
     """
-    return execute_query(sql)        
+    return execute_query(sql)
 
 def update_1d_pipeline_table(field_name, band_number, status, column_name):
     """

@@ -1,8 +1,6 @@
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.decorators import api_view
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
 from ..services.pipeline_3d import (
@@ -13,28 +11,11 @@ from ..services.pipeline_3d import (
     get_tiles_order_by_3d_pipeline_val,
     get_tiles_where_no_validation_link,
     get_tiles_that_had_processing_started,
-    get_all_tiles,
     reset_3d_pipeline_val_and_link,
     reset_3d_pipeline_val_running,
     reset_3d_pipeline_val_waiting,
     update_3d_pipeline_table,
 )
-
-@extend_schema(summary="check main tile database",
-               description="SELECT * FROM possum.tile")
-@api_view(["GET"])
-def check_main_tile_database(request):
-    try:
-        tiles = get_all_tiles()
-        return Response({
-            "success": True,
-            "tiles": tiles,
-        })
-    except Exception as e:
-        return Response(
-            {"error": str(e)},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
 
 
 @extend_schema(summary="Find tiles that had processing at least started",
@@ -223,48 +204,39 @@ def tiles_where_ingest_failed(request, band_number, order_by_3d_pipeline_ingest=
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-class TilesReadyForIngestAPI(APIView):
-    permission_classes = [IsAuthenticated]
 
-    def get(self, request, band_number):
+@api_view(["GET"])
+def tiles_ready_for_ingest(request, band_number):
+    try:
+        tiles = get_tiles_for_ingest(band_number)
 
-        try:
-            tiles = get_tiles_for_ingest(band_number)
+        return Response({
+            "success": True,
+            "band": band_number,
+            "tiles": tiles,
+        })
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
-            return Response({
-                "success": True,
-                "band": band_number,
-                "tiles": tiles,
-            })
+@extend_schema(summary="Find tiles to do with 3D pipeline, CUBE and MFS needs to be done")
+@api_view(["GET"])
+def tiles_ready_for_3dpipeline(request, band_number):
+    try:
+        tiles = get_tiles_for_pipeline_run(band_number)        
+        return Response({
+            "success": True,
+            "band": band_number,
+            "tiles": tiles,
+        })
 
-        except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        
-class TilesReadyFor3DPipelineAPI(APIView):
-    permission_classes = [IsAuthenticated]
-
-    @extend_schema(summary="Find tiles to do with 3D pipeline, CUBE and MFS needs to be done")
-    def get(self, request, band_number):
-
-        try:
-            tiles = get_tiles_for_pipeline_run(
-                band_number
-            )
-
-            return Response({
-                "success": True,
-                "band": band_number,
-                "tiles": tiles,
-            })
-
-        except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
 @extend_schema(
     parameters=[
@@ -424,7 +396,7 @@ def reset_3d_pipeline_val_waitingforvalidation(request, band_number):
                              \n-- SET "3d_pipeline_val" = NULL
                              \n-- WHERE "3d_pipeline_val" = 'Running'""")
 @api_view(["POST"])
-def reset_3d_pipeline_val_running(request, band_number):
+def reset_running_3d_pipeline_val(request, band_number):
     try:
         rows = reset_3d_pipeline_val_running(band_number)
         return Response({

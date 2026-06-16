@@ -1,8 +1,6 @@
 """
-Database query functions for interacting with the ausSRC database.
+Database query functions for 3d pipeline specific
 """
-from astropy.table import Table
-from django.db import connection
 from .utils import *
 
 def update_3d_pipeline_table(tile_number, band_number, status, column_name):
@@ -223,12 +221,3 @@ def get_tiles_that_had_processing_started(band_number, tile_id):
     return execute_query(query, params)
 
 
-def get_all_tiles():
-    """
-    ## check main tile database
-    """
-    query = f"""
-        SELECT * 
-        FROM possum.tile
-    """
-    return execute_query(query)    

@@ -1,25 +1,10 @@
 """
 Database query functions for interacting with the ausSRC database.
 """
-from astropy.table import Table
 from django.db import connection
 
 
 #---- Utilities methods -------
-
-def rows_to_table(rows, colnames=None, dtype=None):
-    """
-    Convert a list of row tuples and column names into an astropy Table.
-    """
-    if not rows:
-        # Empty table, but we might still know the column names
-        return Table(names=colnames or [], dtype=dtype)
-
-    if colnames is None:
-        ncols = len(rows[0])
-        colnames = [f"col{i}" for i in range(ncols)]
-
-    return Table(rows=rows, names=colnames, dtype=dtype)
 
 
 def execute_update_query(query, params=None, verbose=False):
@@ -53,7 +38,7 @@ def execute_update_query(query, params=None, verbose=False):
 
 
 def execute_query(
-    query, params=None, verbose=False, return_colnames=False
+    query, params=None, verbose=False
 ):
     """
     Execute a SQL query and return the results.
@@ -63,14 +48,11 @@ def execute_query(
         database_connection: An open DB-API 2.0 connection.
         params (tuple): Optional parameters for the SQL query.
         verbose (bool): If True, print the query before executing.
-        return_colnames (bool): If True, also return the column names.
 
     Returns:
-        list or (list, list): The results of the query, and optionally
-        a list of column names.
+        list: The results of the query as dictionary
     """
     results = []
-    colnames = []
     try:
         with connection.cursor() as cursor:
             if verbose:
@@ -83,13 +65,13 @@ def execute_query(
 
             if cursor.description is not None:
                 colnames = [desc[0] for desc in cursor.description]
-                results = cursor.fetchall()
+                results = [
+                    dict(zip(colnames, row))
+                    for row in cursor.fetchall()
+                ]
     except Exception as e:
         print(f"An error occurred: {e}")
         raise
-
-    if return_colnames:
-        return results, colnames
     return results
 
 

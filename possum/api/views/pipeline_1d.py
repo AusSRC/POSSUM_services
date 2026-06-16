@@ -249,8 +249,8 @@ def fields_ready_single_sb_pipeline(request, band_number: int):
     ## Check fields that could be added to partial tile database
     """
     try:
-        data = get_fields_ready_single_SB_pipeline(band_number)
-        return Response(data, status=status.HTTP_200_OK)
+        rows = get_fields_ready_single_SB_pipeline(band_number)
+        return Response(rows, status=status.HTTP_200_OK)
     except Exception as e:
         return Response(
             {"error": str(e)},
@@ -264,8 +264,8 @@ def full_single_sb_pipeline_table(request, band_number: int):
     Returns full observation state table for a band
     """
     try:
-        data = get_full_table_single_SB_pipeline(band_number)
-        return Response(data, status=status.HTTP_200_OK)
+        rows = get_full_table_single_SB_pipeline(band_number)
+        return Response(rows, status=status.HTTP_200_OK)
     except Exception as e:
         return Response(
             {"error": str(e)},
@@ -297,6 +297,10 @@ def partial_tiles_running(request, band_number: int):
         )
 
 @extend_schema(
+    parameters=[
+        OpenApiParameter(name="center_only", type=bool, location=OpenApiParameter.QUERY, required=False,
+                         description="If true, only return observations whose type is 'center'.")
+    ],
     description="""
 \nSELECT pt.observation, ob.sbid, pt.tile1, pt.tile2, pt.tile3, pt.tile4,
 \n		 pt.type, pt.number_sources, pt."1d_pipeline", ob1."1d_pipeline_validation"
@@ -311,11 +315,12 @@ def partial_tiles_running(request, band_number: int):
 \nORDER BY id DESC;"""
 )    
 @api_view(["GET"])
-def partial_tiles_failed(request, band_number: int, center_only: bool):
+def partial_tiles_failed(request, band_number: int):
     """
     -- ## Check database for failed jobs, probably 12hr boundary if theyre center.
     """
     try:
+        center_only = request.GET.get("center_only", "").lower() == "true"
         rows = get_partial_tile_jobs_failed(band_number, center_only)
         return Response(rows, status=status.HTTP_200_OK)
     except Exception as e:

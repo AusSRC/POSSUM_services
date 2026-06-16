@@ -40,15 +40,21 @@ from .views.pipeline_1d import (
 )
 
 from .views.pipeline_3d import (
-    TilesReadyForIngestAPI,
-    TilesReadyFor3DPipelineAPI,
+    tiles_ready_for_ingest,
+    tiles_ready_for_3dpipeline,
     update_3d_pipeline,
     update_3d_pipeline_val,
     update_3d_pipeline_ingest,
     update_3d_val_link,
-    reset_3d_pipeline_val_running,
+    reset_running_3d_pipeline_val,
     reset_3d_pipeline_val_waitingforvalidation,
     reset_3d_pipeline_val_and_link
+)
+
+from .views.pipeline_common import (
+    observations,
+    tiles,
+    tiles_observations
 )
 
 urlpatterns = [
@@ -72,11 +78,13 @@ urlpatterns = [
     # ---- 3D endpoints ---
     path(
         "3d-pipeline/tiles/ready-for-ingest/band<int:band_number>/",
-        TilesReadyForIngestAPI.as_view(),
+        tiles_ready_for_ingest,
+        name="3d-pipeline-tiles-ready-for-ingest"
     ),
     path(
         "3d-pipeline/tiles/ready-for-3d/band<int:band_number>/",
-        TilesReadyFor3DPipelineAPI.as_view(),
+        tiles_ready_for_3dpipeline,
+        name="3d-pipeline-tiles-ready-for-3d"
     ),
     path(
         "3d-pipeline/tiles/update/3d_pipeline/",
@@ -100,7 +108,7 @@ urlpatterns = [
     ),
     path(
         "3d-pipeline/tiles/reset/3d_pipeline_val/running/band<int:band_number>/",
-        reset_3d_pipeline_val_running,
+        reset_running_3d_pipeline_val,
         name="3d-pipeline-reset-3d-pipeline-val-running"
     ),
     path(
@@ -191,7 +199,7 @@ urlpatterns = [
         name="check_running_partial_tile_jobs",
     ),
     path(
-        "1d-pipeline/partial-tiles/failed/band<int:band_number>/<bool:centre_only>",
+        "1d-pipeline/partial-tiles/failed/band<int:band_number>",
         partial_tiles_failed,
         name="check_failed_partial_tile_jobs",
     ),
@@ -240,4 +248,24 @@ urlpatterns = [
         update_failed_partial_tiles_centre,
         name="update-partial-tiles-type-center"
     ), 
+
+    #---- Common URLS non specific to 1D and 3D ---
+    path(
+        "common/tiles/band<int:band_number>/",
+        tiles,
+        name="all-tiles"
+    ),
+    path(
+        "common/tiles-observations/band<int:band_number>/",
+        tiles_observations,
+        name="tiles-associated-observations"
+    ),
+    path(
+        "common/observations/band<int:band_number>/",
+        observations,
+        name="observations"
+    ),
+
+
+
 ]
