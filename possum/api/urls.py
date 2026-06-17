@@ -40,6 +40,14 @@ from .views.pipeline_1d import (
 )
 
 from .views.pipeline_3d import (
+    tiles_that_had_processing_started,
+    tiles_order_by_3d_pipeline_val,
+    tiles_for_completed_processing,
+    tiles_for_ingest_running,
+    tiles_for_running_jobs,
+    tiles_for_tile_id,
+    tiles_where_validation_link_doesnt_exist,
+    tiles_where_ingest_failed,
     tiles_ready_for_ingest,
     tiles_ready_for_3dpipeline,
     update_3d_pipeline,
@@ -76,6 +84,46 @@ urlpatterns = [
     ),
 
     # ---- 3D endpoints ---
+    path(
+        "3d-pipeline/tiles/processing-started/band<int:band_number>/",
+        tiles_that_had_processing_started,
+        name="3d-pipeline-tiles-processing-started"
+    ),
+    path(
+        "3d-pipeline/tiles/order_by_3d_pipeline_val/band<int:band_number>/",
+        tiles_order_by_3d_pipeline_val,
+        name="3d-pipeline-tiles-order-by-3d-pipeline-val"
+    ),
+    path(
+        "3d-pipeline/tiles/completed-processing/band<int:band_number>/",
+        tiles_for_completed_processing,
+        name="3d-pipeline-tiles-completed-processing"
+    ),
+    path(
+        "3d-pipeline/tiles/ingest-running/band<int:band_number>/",
+        tiles_for_ingest_running,
+        name="3d-pipeline-tiles-ingest-running"
+    ),
+    path(
+        "3d-pipeline/tiles/running-jobs/band<int:band_number>/",
+        tiles_for_running_jobs,
+        name="3d-pipeline-tiles-running-jobs"
+    ),
+    path(
+        "3d-pipeline/tiles/tile_id/band<int:band_number>/<str:tile_id>/",
+        tiles_for_tile_id,
+        name="3d-pipeline-tiles-by-tile-id"
+    ),
+    path(
+        "3d-pipeline/tiles/validation-link-doesnt-exist/band<int:band_number>/",
+        tiles_where_validation_link_doesnt_exist,
+        name="3d-pipeline-tiles-validation-link-doesnt-exist"
+    ),
+    path(
+        "3d-pipeline/tiles/ingest-failed/band<int:band_number>/",
+        tiles_where_ingest_failed,
+        name="3d-pipeline-tiles-ingest-failed"
+    ),
     path(
         "3d-pipeline/tiles/ready-for-ingest/band<int:band_number>/",
         tiles_ready_for_ingest,
@@ -251,7 +299,7 @@ urlpatterns = [
 
     #---- Common URLS non specific to 1D and 3D ---
     path(
-        "common/tiles/band<int:band_number>/",
+        "common/tiles/",
         tiles,
         name="all-tiles"
     ),

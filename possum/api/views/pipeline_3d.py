@@ -11,7 +11,7 @@ from ..services.pipeline_3d import (
     get_tiles_order_by_3d_pipeline_val,
     get_tiles_where_no_validation_link,
     get_tiles_that_had_processing_started,
-    reset_3d_pipeline_val_and_link,
+    reset_3d_pipeline_val_and_link_null,
     reset_3d_pipeline_val_running,
     reset_3d_pipeline_val_waiting,
     update_3d_pipeline_table,
@@ -20,13 +20,6 @@ from ..services.pipeline_3d import (
 
 @extend_schema(summary="Find tiles that had processing at least started",
     parameters=[
-            OpenApiParameter(
-            name="band_number",
-            type=int,
-            location=OpenApiParameter.QUERY,
-            required=True,
-            description="Band number (1 or 2)",
-        ),
         OpenApiParameter(
             name="tile_number",
             type=str,
@@ -37,10 +30,9 @@ from ..services.pipeline_3d import (
     ]
 )
 @api_view(["GET"])
-def find_tiles_that_had_processing_started(request):
+def tiles_that_had_processing_started(request, band_number):
     try:
-        band_number = request.query_params.get("band_number")
-        tile_id = request.query_params.get("tile_id")
+        tile_id = request.GET.get("tile_id")
         tiles = get_tiles_that_had_processing_started(band_number, tile_id)
         return Response({
             "success": True,
@@ -75,6 +67,10 @@ def tiles_order_by_3d_pipeline_val(request, band_number):
     
 
 @extend_schema(summary="Select tiles where ingest running",
+               parameters=[
+                   OpenApiParameter(name="order_by_3d_pipeline_ingest", type=bool, location=OpenApiParameter.QUERY, required=False,
+                         description="If true, return results ordered by 3d_pipeline_ingest")
+               ],
                description="""
                     SELECT tile_3d.*
                     FROM possum.tile_state_band1 AS tile_3d
@@ -82,8 +78,9 @@ def tiles_order_by_3d_pipeline_val(request, band_number):
                     -- ORDER BY "3d_pipeline_ingest"
                 """)
 @api_view(["GET"])
-def tiles_for_ingest_running(request, band_number, ordered=True):
+def tiles_for_ingest_running(request, band_number):
     try:
+        ordered = request.GET.get("order_by_3d_pipeline_ingest", "").lower() == "true"
         tiles = get_tiles_with_filter(band_number, column_name='3d_pipeline_ingest', column_value='IngestRunning', order_by_3d_pipeline_ingest=ordered)
         return Response({
                 "success": True,
@@ -182,6 +179,10 @@ def tiles_where_validation_link_doesnt_exist(request, band_number):
         )
 
 @extend_schema(summary="Select tiles where ingest failed",
+               parameters=[
+                   OpenApiParameter(name="order_by_3d_pipeline_ingest", type=bool, location=OpenApiParameter.QUERY, required=False,
+                         description="If true, return results ordered by 3d_pipeline_ingest")
+               ],
                description="""
                     SELECT tile_3d.*
                     FROM possum.tile_state_band1 AS tile_3d
@@ -189,9 +190,10 @@ def tiles_where_validation_link_doesnt_exist(request, band_number):
                     -- ORDER BY "3d_pipeline_ingest"
                 """)
 @api_view(["GET"])
-def tiles_where_ingest_failed(request, band_number, order_by_3d_pipeline_ingest=True):
+def tiles_where_ingest_failed(request, band_number):
     try:
-        tiles = get_tiles_with_filter(band_number, order_by_3d_pipeline_ingest)
+        ordered = request.GET.get("order_by_3d_pipeline_ingest", "").lower() == "true"
+        tiles = get_tiles_with_filter(band_number, order_by_3d_pipeline_ingest=ordered)
         return Response({
                 "success": True,
                 "band": band_number,
@@ -417,7 +419,7 @@ def reset_running_3d_pipeline_val(request, band_number):
 @api_view(["POST"])
 def reset_3d_pipeline_val_and_link(request, band_number):
     try:
-        rows = reset_3d_pipeline_val_and_link(band_number)
+        rows = reset_3d_pipeline_val_and_link_null(band_number)
         return Response({
             "success": True,
             "rows_updated": rows,

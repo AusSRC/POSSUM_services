@@ -71,7 +71,7 @@ def reset_3d_pipeline_val_running(band_number):
     """
     return execute_update_query(query)
 
-def reset_3d_pipeline_val_and_link(band_number):
+def reset_3d_pipeline_val_and_link_null(band_number):
     """
     Update 3d_pipeline_val and 3d_val_link to null WHERE 3d_pipeline is Null
     """
