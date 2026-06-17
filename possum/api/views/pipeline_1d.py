@@ -207,11 +207,6 @@ def observations_non_edge_rows(request, band_number: int):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-@extend_schema(
-    description="""
-\n-- SELECT * FROM possum.observation_state_band1
-\n-- WHERE UPPER("cube_state") = 'COMPLETED'"""
-)
 @api_view(["GET"])
 def observations_completed_aussrc(request, band_number: int):
     try:
@@ -238,11 +233,6 @@ def boundary_issues(request, observation, band_number):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-@extend_schema(
-    description="""\nSELECT * FROM possum.observation_state_band1
-                   \nWHERE ("single_sb_1d_pipeline" IS NULL or "single_sb_1d_pipeline" = '')
-                   \nAND UPPER("cube_state") = 'COMPLETED'"""
-)
 @api_view(["GET"])
 def fields_ready_single_sb_pipeline(request, band_number: int):
     """
@@ -272,16 +262,7 @@ def full_single_sb_pipeline_table(request, band_number: int):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )        
 
-@extend_schema(
-    description="""
-\nSELECT pt.observation, ob.sbid, pt.tile1, pt.tile2, pt.tile3, pt.tile4,
-\n  		 pt.type, pt.number_sources, pt."1d_pipeline", ob1."1d_pipeline_validation"
-\nFROM possum.partial_tile_1d_pipeline_band1 pt,
-\n           possum.observation ob, possum.observation_state_band1 as ob1
-\nWHERE ob.name = pt.observation AND ob.name = ob1.name
-\n           AND pt."1d_pipeline" = 'Running'
-\nORDER BY id DESC;"""
-)    
+    
 @api_view(["GET"])
 def partial_tiles_running(request, band_number: int):
     """ 
@@ -300,19 +281,7 @@ def partial_tiles_running(request, band_number: int):
     parameters=[
         OpenApiParameter(name="center_only", type=bool, location=OpenApiParameter.QUERY, required=False,
                          description="If true, only return observations whose type is 'center'.")
-    ],
-    description="""
-\nSELECT pt.observation, ob.sbid, pt.tile1, pt.tile2, pt.tile3, pt.tile4,
-\n		 pt.type, pt.number_sources, pt."1d_pipeline", ob1."1d_pipeline_validation"
-\n		 , t."ra_deg"
-\nFROM possum.partial_tile_1d_pipeline_band1 pt,
-\npossum.observation ob, possum.observation_state_band1 as ob1
-\n, possum.tile as t
-\nWHERE ob.name = pt.observation AND ob.name = ob1.name 
-\nAND t.tile = pt.tile1
-\nAND pt."1d_pipeline" = 'Failed' 
-\n-- AND "type" = 'center'
-\nORDER BY id DESC;"""
+    ]
 )    
 @api_view(["GET"])
 def partial_tiles_failed(request, band_number: int):
@@ -329,17 +298,6 @@ def partial_tiles_failed(request, band_number: int):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-@extend_schema(description="""
-\nSELECT pt.observation, ob.sbid, pt.tile1, pt.tile2, pt.tile3, pt.tile4,
-\n		 pt.type, pt.number_sources, pt."1d_pipeline", ob1."1d_pipeline_validation"
-\n		 , t."ra_deg"
-\nFROM possum.partial_tile_1d_pipeline_band1 pt,
-\npossum.observation ob, possum.observation_state_band1 as ob1
-\n, possum.tile as t
-\nWHERE ob.name = pt.observation AND ob.name = ob1.name 
-\nAND t.tile = pt.tile1
-\nAND pt.tile1 = '6143'
-\nORDER BY id DESC;""")
 @api_view(["GET"])
 def partial_tiles_by_tile_number(request, band_number: int, tile_number: int):
     """
@@ -354,9 +312,6 @@ def partial_tiles_by_tile_number(request, band_number: int, tile_number: int):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-@extend_schema(description="""
-\nSELECT * FROM possum.observation_state_band1
-\nWHERE ("1d_pipeline_validation" = 'Completed')""")
 @api_view(["GET"])    
 def partial_tiles_completed(request, band_number: int):
     """
@@ -371,14 +326,6 @@ def partial_tiles_completed(request, band_number: int):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )   
 
-@extend_schema(description="""
-\nSELECT pt.observation, ob.sbid, pt.tile1, pt.tile2, pt.tile3, pt.tile4,
-\n 		 pt.type, pt.number_sources, pt."1d_pipeline", ob1."1d_pipeline_validation"
-\nFROM possum.partial_tile_1d_pipeline_band1 pt,
-\npossum.observation ob, possum.observation_state_band1 as ob1
-\nWHERE ob.name = pt.observation AND ob.name = ob1.name
-\nAND ob1."1d_pipeline_validation" LIKE '%hpx edge%'
-\nORDER BY id DESC;""")
 @api_view(["GET"])
 def partial_tiles_hpx_edge(request, band_number: int):
     """
@@ -393,19 +340,6 @@ def partial_tiles_hpx_edge(request, band_number: int):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-@extend_schema(description="""
-\n-- SELECT
-\n--     c.conname,
-\n--     pg_get_constraintdef(c.oid) AS definition
-\n-- FROM pg_constraint AS c
-\n-- JOIN pg_class AS t
-\n--     ON c.conrelid = t.oid
-\n-- JOIN pg_namespace AS n
-\n--     ON n.oid = t.relnamespace
-\n-- WHERE n.nspname = 'possum'
-\n--   AND t.relname = 'partial_tile_1d_pipeline_band1'
-\n--   AND c.contype = 'c';
-             """)
 @api_view(["GET"])
 def partial_tiles_constraints(request, band_number: int):
     """
@@ -461,18 +395,7 @@ def update_single_sb_1d_pipeline(request):
         OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.QUERY, required=True,
                          description="Band number (1 or 2)"),
         OpenApiParameter(name="field_name", type=str, location=OpenApiParameter.QUERY, required=True),
-    ],
-    description="""
-\n-- -- -- ## Update database to rerun a field
-\n-- -- 1) Clear the 1d_pipeline flag on the partial tile rows
-\n-- UPDATE possum.partial_tile_1d_pipeline_band1 AS pt
-\n-- SET "1d_pipeline" = NULL
-\n-- FROM possum.observation AS ob
-\n-- JOIN possum.observation_state_band1 AS ob1
-\n--   ON ob.name = ob1.name
-\n-- WHERE ob.name = pt.observation
-\n--   AND ob1.name = 'EMU_1001-09B';
-    """
+    ]
 )
 @api_view(["POST"])
 def clear_partial_tile_1d_pipeline(request):
@@ -494,14 +417,7 @@ def clear_partial_tile_1d_pipeline(request):
         OpenApiParameter(name="field_name", type=str, location=OpenApiParameter.QUERY, required=True),
         OpenApiParameter(name="status", type=str, location=OpenApiParameter.QUERY, required=False,
                          description="Optional. If omitted, status will be set to NULL")
-    ],
-    description="""
-    \n-- -- -- ## Update database to rerun a field
-    \n-- -- 2) Clear the validation flag on the observation_state rows e.g.
-    \n-- UPDATE possum.observation_state_band1 AS ob1
-    \n-- SET "1d_pipeline_validation" = NULL
-    \n-- WHERE ob1.name = 'EMU_0510-32';
-    """
+    ]
 )
 @api_view(["PATCH"])
 def update_1d_pipeline_validation(request):
@@ -532,11 +448,6 @@ def update_1d_pipeline_validation(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
     
-@extend_schema(
-    description="""e.g.\n-- UPDATE possum.observation_state_band1 AS ob1
-                   \n-- SET "1d_pipeline_validation" = NULL
-                   \n-- WHERE "1d_pipeline_validation" = 'Failed'"""
-)
 @api_view(["POST"])
 def reset_failed_1d_pipeline_validation(request):
     """
@@ -557,17 +468,6 @@ def reset_failed_1d_pipeline_validation(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
     
-@extend_schema(
-    description="""
-\n-- UPDATE possum.observation_state_band1 AS ob1
-\n-- SET "1d_pipeline_validation" = NULL
-\n-- FROM possum.observation AS ob
-\n-- JOIN possum.partial_tile_1d_pipeline_band1 AS pt
-\n--     ON pt.observation = ob.name
-\n-- WHERE ob1.name = ob.name
-\n--   AND pt."1d_pipeline" = 'Failed'
-\n-- RETURNING ob1.name, ob1."1d_pipeline_validation";"""
-)
 @api_view(["POST"])
 def reset_failed_1d_pipeline(request):
     """
@@ -592,18 +492,7 @@ def reset_failed_1d_pipeline(request):
         OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.QUERY, required=True,
                          description="Band number (1 or 2)"),
         OpenApiParameter(name="field_name", type=str, location=OpenApiParameter.QUERY, required=True),
-    ],    
-    description="""
-\n-- ## Clear running jobs that are not running
-\n-- UPDATE possum.partial_tile_1d_pipeline_band1 AS pt
-\n-- SET "1d_pipeline" = NULL
-\n-- FROM possum.observation AS ob
-\n-- JOIN possum.observation_state_band1 AS ob1
-\n-- ON ob.name = ob1.name
-\n-- WHERE ob.name = pt.observation
-\n-- AND ob1.name = 'EMU_0522-09B'
-\n-- AND "1d_pipeline" = 'Running'
-     """
+    ]
 )
 @api_view(["PATCH"])
 def clear_running_jobs_not_running(request):
@@ -630,13 +519,7 @@ def clear_running_jobs_not_running(request):
     parameters=[
         OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.QUERY, required=True,
                          description="Band number (1 or 2)"),
-    ],
-    description="""
-    \n-- -- Update running jobs to Null so they get restarted
-    \n-- UPDATE possum.partial_tile_1d_pipeline_band1 AS pt
-    \n-- SET "1d_pipeline" = Null
-    \n-- WHERE "1d_pipeline" = 'Running'
-    """
+    ]
 )    
 @api_view(["POST"])
 def restart_running_jobs_view(request):
@@ -661,12 +544,7 @@ def restart_running_jobs_view(request):
 @api_view(["POST"])
 def update_failed_partial_tiles_centre(request):
     """
-\n-- -- ## Also update type from "center" to "center - crosses projection boundary!"
-\n-- UPDATE possum.partial_tile_1d_pipeline_band1 AS pt
-\n-- SET type = 'center - crosses projection boundary!'
-\n-- WHERE pt."1d_pipeline" = 'Failed'
-\n--   AND pt.type = 'center'
-\n-- RETURNING pt.observation, pt.tile1, pt.type, pt."1d_pipeline";
+    ## Also update type from "center" to "center - crosses projection boundary!"
     """
     try:
         rows = update_partial_1d_pipeline_type_center()

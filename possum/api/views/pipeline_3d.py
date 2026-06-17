@@ -44,12 +44,7 @@ def tiles_that_had_processing_started(request, band_number):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-@extend_schema(summary="check whole tile3d pipeline status database",
-               description="""
-                    SELECT tile_3d.*
-                    FROM possum.tile_state_band1 AS tile_3d
-                    ORDER BY "3d_pipeline_val" ASC
-                """)
+@extend_schema(summary="check whole tile3d pipeline status database")
 @api_view(["GET"])
 def tiles_order_by_3d_pipeline_val(request, band_number):
     try:
@@ -70,13 +65,7 @@ def tiles_order_by_3d_pipeline_val(request, band_number):
                parameters=[
                    OpenApiParameter(name="order_by_3d_pipeline_ingest", type=bool, location=OpenApiParameter.QUERY, required=False,
                          description="If true, return results ordered by 3d_pipeline_ingest")
-               ],
-               description="""
-                    SELECT tile_3d.*
-                    FROM possum.tile_state_band1 AS tile_3d
-                    WHERE "3d_pipeline_ingest" = 'IngestRunning'
-                    -- ORDER BY "3d_pipeline_ingest"
-                """)
+               ])
 @api_view(["GET"])
 def tiles_for_ingest_running(request, band_number):
     try:
@@ -93,12 +82,7 @@ def tiles_for_ingest_running(request, band_number):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-@extend_schema(summary="check tile3d for running jobs",
-               description="""
-                    SELECT tile_3d.*
-                    FROM possum.tile_state_band1 AS tile_3d
-                    WHERE "3d_pipeline_val" = 'Running'
-                """)
+@extend_schema(summary="check tile3d for running jobs")
 @api_view(["GET"])
 def tiles_for_running_jobs(request, band_number):
     try:
@@ -114,12 +98,7 @@ def tiles_for_running_jobs(request, band_number):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-@extend_schema(summary="check tile3d for a specific tilenumber",
-               description="""
-                    SELECT tile_3d.*
-                    FROM possum.tile_state_band1 AS tile_3d
-                    WHERE tile = '5423'
-                """)
+@extend_schema(summary="check tile3d for a specific tilenumber")
 @api_view(["GET"])
 def tiles_for_tile_id(request, band_number, tile_id):
     try:
@@ -135,12 +114,7 @@ def tiles_for_tile_id(request, band_number, tile_id):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-@extend_schema(summary="check tile3d for completed processing",
-               description="""
-                   SELECT tile_3d.*
-                   FROM possum.tile_state_band1 AS tile_3d
-                   WHERE "3d_pipeline_val" = 'WaitingForValidation' OR "3d_pipeline_val" = 'Good'
-                """)
+@extend_schema(summary="check tile3d for completed processing")
 @api_view(["GET"])
 def tiles_for_completed_processing(request, band_number):
     try:
@@ -156,13 +130,7 @@ def tiles_for_completed_processing(request, band_number):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-@extend_schema(summary="Select tiles where validation link doesnt exist",
-               description="""
-                    SELECT tile_3d.*
-                    FROM possum.tile_state_band1 AS tile_3d
-                    WHERE "3d_pipeline" IS NOT NULL and "3d_pipeline_val" IS NULL
-                    ORDER BY "3d_pipeline" ASC
-                """)
+@extend_schema(summary="Select tiles where validation link doesnt exist")
 @api_view(["GET"])
 def tiles_where_validation_link_doesnt_exist(request, band_number):
     try:
@@ -182,13 +150,7 @@ def tiles_where_validation_link_doesnt_exist(request, band_number):
                parameters=[
                    OpenApiParameter(name="order_by_3d_pipeline_ingest", type=bool, location=OpenApiParameter.QUERY, required=False,
                          description="If true, return results ordered by 3d_pipeline_ingest")
-               ],
-               description="""
-                    SELECT tile_3d.*
-                    FROM possum.tile_state_band1 AS tile_3d
-                    WHERE "3d_pipeline_ingest" = 'IngestFailed'
-                    -- ORDER BY "3d_pipeline_ingest"
-                """)
+               ])
 @api_view(["GET"])
 def tiles_where_ingest_failed(request, band_number):
     try:
@@ -374,10 +336,7 @@ def update_3d_pipeline_val(request):
             status=status.HTTP_400_BAD_REQUEST,
         )   
 
-@extend_schema(summary="Update 3d_pipeline to null where 3d_pipeline_val = 'WaitingForValidation'",
-               description="""\n-- UPDATE possum.tile_state_band1
-                              \n-- SET "3d_pipeline" = NULL
-                              \n-- WHERE "3d_pipeline_val" = 'WaitingForValidation'""")
+@extend_schema(summary="Update 3d_pipeline to null where 3d_pipeline_val = 'WaitingForValidation'")
 @api_view(["POST"])
 def reset_3d_pipeline_val_waitingforvalidation(request, band_number):
     try:
@@ -393,10 +352,7 @@ def reset_3d_pipeline_val_waitingforvalidation(request, band_number):
         )   
 
 
-@extend_schema(summary="Update 3d_pipeline_val to null where it's supposedly running",
-              description="""\n-- UPDATE possum.tile_state_band1
-                             \n-- SET "3d_pipeline_val" = NULL
-                             \n-- WHERE "3d_pipeline_val" = 'Running'""")
+@extend_schema(summary="Update 3d_pipeline_val to null where it's supposedly running")
 @api_view(["POST"])
 def reset_running_3d_pipeline_val(request, band_number):
     try:
@@ -412,10 +368,7 @@ def reset_running_3d_pipeline_val(request, band_number):
         )  
 
 
-@extend_schema(summary="Update 3d_pipeline_val and 3d_val_link to null WHERE 3d_pipeline is Null",
-              description="""\n-- UPDATE possum.tile_state_band1
-                             \n-- SET "3d_pipeline_val" = Null, "3d_val_link" = Null
-                             \n-- WHERE "3d_pipeline" is NULL;""")
+@extend_schema(summary="Update 3d_pipeline_val and 3d_val_link to null WHERE 3d_pipeline is Null")
 @api_view(["POST"])
 def reset_3d_pipeline_val_and_link(request, band_number):
     try:
