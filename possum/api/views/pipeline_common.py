@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -13,6 +14,7 @@ from ..services.pipeline_common import (
 @extend_schema(summary="check main tile database",
                description="SELECT * FROM possum.tile")
 @api_view(["GET"])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def tiles(request):
     try:
         rows = get_all_tiles()
@@ -25,6 +27,7 @@ def tiles(request):
 
 @extend_schema(summary="Get all tiles and associated observations")
 @api_view(["GET"])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def tiles_observations(request, band_number: int):
     try:
         rows = get_tiles_and_observations(band_number)
@@ -33,10 +36,11 @@ def tiles_observations(request, band_number: int):
         return Response(
             {"error": str(e)},
             status=status.HTTP_400_BAD_REQUEST
-        )    
+        )
 
 @extend_schema(summary="Get all observations")
 @api_view(["GET"])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def observations(request, band_number: int):
     try:
         rows = get_observations(band_number)
@@ -45,4 +49,4 @@ def observations(request, band_number: int):
         return Response(
             {"error": str(e)},
             status=status.HTTP_400_BAD_REQUEST
-        )    
+        )
