@@ -31,7 +31,7 @@ from ..services.pipeline_1d import (
     get_observation_completed_aussrc
 )
 
-
+@extend_schema(operation_id="retrieve_1d_pipeline_tile_all")
 @api_view(["GET"])
 def partial_tiles(request, band_number: int):
     try:
@@ -304,7 +304,7 @@ def partial_tiles_failed(request, band_number: int):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-@extend_schema(summary="## Check database for a tile number")
+@extend_schema(summary="## Check database for a tile number", operation_id="retrieve_1d_pipeline_tile")
 @api_view(["GET"])
 def partial_tiles_by_tile_number(request, band_number: int, tile_number: int):
     """
