@@ -2,13 +2,15 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 
 
 @extend_schema(exclude=True)
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def service_token(request):
     """
     Internal use only: get service token for aladin
