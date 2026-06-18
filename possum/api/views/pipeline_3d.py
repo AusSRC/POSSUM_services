@@ -214,6 +214,11 @@ def tiles_ready_for_3dpipeline(request, band_number):
 @api_view(["PATCH"])
 def update_3d_pipeline(request):
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         band_number = request.query_params.get("band_number")
         tile_number = request.query_params.get("tile_number")
         status = request.query_params.get("3d_pipeline")
@@ -247,6 +252,11 @@ def update_3d_pipeline(request):
 @api_view(["PATCH"])
 def update_3d_val_link(request):
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         band_number = request.query_params.get("band_number")
         tile_number = request.query_params.get("tile_number")
         status = request.query_params.get("3d_val_link")
@@ -282,6 +292,11 @@ def update_3d_val_link(request):
 @api_view(["PATCH"])
 def update_3d_pipeline_ingest(request):
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         band_number = request.query_params.get("band_number")
         tile_number = request.query_params.get("tile_number")
         status = request.query_params.get("3d_pipeline_ingest")
@@ -316,6 +331,11 @@ def update_3d_pipeline_ingest(request):
 @api_view(["PATCH"])
 def update_3d_pipeline_val(request):
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         band_number = request.query_params.get("band_number")
         tile_number = request.query_params.get("tile_number")
         status = request.query_params.get("3d_pipeline_val")
@@ -341,6 +361,11 @@ def update_3d_pipeline_val(request):
 @api_view(["POST"])
 def reset_3d_pipeline_val_waitingforvalidation(request, band_number):
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         rows = reset_3d_pipeline_val_waiting(band_number)
         return Response({
             "success": True,
@@ -357,6 +382,11 @@ def reset_3d_pipeline_val_waitingforvalidation(request, band_number):
 @api_view(["POST"])
 def reset_running_3d_pipeline_val(request, band_number):
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         rows = reset_3d_pipeline_val_running(band_number)
         return Response({
             "success": True,
@@ -373,6 +403,11 @@ def reset_running_3d_pipeline_val(request, band_number):
 @api_view(["POST"])
 def reset_3d_pipeline_val_and_link(request, band_number):
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         rows = reset_3d_pipeline_val_and_link_null(band_number)
         return Response({
             "success": True,

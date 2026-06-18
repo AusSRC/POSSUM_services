@@ -108,6 +108,11 @@ def check_partial_tiles_for_observation(request, band_number: int, field_name: s
 @api_view(["POST"])
 def update_partial_tile_status(request):
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         band_number = request.query_params.get("band_number")
         field_name = request.query_params.get("field_name")
         tile_numbers = request.query_params.get("tile_numbers")
@@ -379,6 +384,11 @@ def update_single_sb_1d_pipeline(request):
     Update single_sb_1d_pipeline field in observation_state_band{band_number} table    
     """
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         band_number = request.query_params.get("band_number")
         field_name = request.query_params.get("field_name")
         status = request.query_params.get("status") 
@@ -414,6 +424,11 @@ def update_single_sb_1d_pipeline(request):
 @api_view(["POST"])
 def clear_partial_tile_1d_pipeline(request ):
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         band_number = request.query_params.get("band_number")
         field_name = request.query_params.get("field_name")
         data = reset_partial_tile_1d_pipeline(band_number, field_name)
@@ -440,6 +455,11 @@ def update_1d_pipeline_validation(request):
     2) Clear the validation flag on the observation_state rows
     """
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         band_number = request.query_params.get("band_number")
         field_name = request.query_params.get("field_name")
         status = request.query_params.get("status") 
@@ -470,6 +490,11 @@ def reset_failed_1d_pipeline_validation(request):
     Clear the validation flag for failed observation_state rows    
     """
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         band_number = request.query_params.get("band_number")
         rows = reset_1d_pipeline_validation_failed(band_number)
 
@@ -491,6 +516,11 @@ def reset_failed_1d_pipeline(request):
     ## Update ALL failed jobs to set 1d_pipeline_validation to null
     """
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         band_number = request.query_params.get("band_number")
         rows = reset_1d_pipeline_failed(band_number)
         return Response({
@@ -518,6 +548,11 @@ def clear_running_jobs_not_running(request):
     Clear running jobs that are not running
     """
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         band_number = request.query_params.get("band_number")
         field_name = request.query_params.get("field_name")
         rows = reset_running_jobs_not_running(band_number, field_name)
@@ -546,6 +581,11 @@ def restart_running_jobs_view(request):
     # -- -- Update running jobs to Null so they get restarted
     """
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         band_number = request.query_params.get("band_number")
         rows = restart_running_jobs(band_number)
         return Response({
@@ -566,6 +606,11 @@ def update_failed_partial_tiles_centre(request):
     ## Also update type from "center" to "center - crosses projection boundary!"
     """
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         rows = update_partial_1d_pipeline_type_center()
         return Response({
             "success": True,
