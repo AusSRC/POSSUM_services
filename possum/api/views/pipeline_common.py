@@ -11,8 +11,7 @@ from ..services.pipeline_common import (
     get_tiles_and_observations
 )
 
-@extend_schema(summary="check main tile database",
-               description="SELECT * FROM possum.tile")
+@extend_schema(summary="check main tile database (for all bands)")
 @api_view(["GET"])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def tiles(request):

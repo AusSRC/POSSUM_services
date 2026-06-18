@@ -269,6 +269,7 @@ def update_3d_val_link(request):
         )
 
 @extend_schema(
+    summary="## Update 3d_pipeline_ingest (to NULL if not given)",
     parameters=[
         OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.QUERY, required=True,
                          description="Band number (1 or 2)"),

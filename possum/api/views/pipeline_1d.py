@@ -141,6 +141,7 @@ def update_partial_tile_status(request):
         )
 
 @extend_schema(
+    summary="Check fields by observation name",
     parameters=[
         OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.QUERY, required=True,
                          description="Band number (1 or 2)"),
@@ -162,6 +163,7 @@ def observation_by_name(request,  band_number: int, name: str):
         )
     
 @extend_schema(
+    summary="## Check fields where validation / summary plot failed",
     parameters=[
         OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.QUERY, required=True,
                          description="Band number (1 or 2)")
@@ -170,7 +172,7 @@ def observation_by_name(request,  band_number: int, name: str):
 @api_view(["GET"])
 def get_failed_observations(request,  band_number: int):
     """
-    ## Check fields by observation name
+    ## Check fields where validation / summary plot failed
     """
     try:
         data = get_observation_failed(band_number)
@@ -181,6 +183,7 @@ def get_failed_observations(request,  band_number: int):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )    
 
+@extend_schema(summary="## Check tiles TODO for validation")
 @api_view(["GET"])
 def observations_complete_partial_tiles(request, band_number: int):
     """
@@ -207,6 +210,7 @@ def observations_non_edge_rows(request, band_number: int):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+@extend_schema(summary="## Check total number of fields that AUSSRC has done")
 @api_view(["GET"])
 def observations_completed_aussrc(request, band_number: int):
     try:
@@ -233,6 +237,7 @@ def boundary_issues(request, observation, band_number):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+@extend_schema(summary="## Check fields that could be added to partial tile database")
 @api_view(["GET"])
 def fields_ready_single_sb_pipeline(request, band_number: int):
     """
@@ -262,7 +267,7 @@ def full_single_sb_pipeline_table(request, band_number: int):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )        
 
-    
+@extend_schema(summary="## Check database for running jobs, might be ghosts")    
 @api_view(["GET"])
 def partial_tiles_running(request, band_number: int):
     """ 
@@ -278,6 +283,7 @@ def partial_tiles_running(request, band_number: int):
         )
 
 @extend_schema(
+    summary="## Check database for failed jobs, probably 12hr boundary if theyre center.",
     parameters=[
         OpenApiParameter(name="center_only", type=bool, location=OpenApiParameter.QUERY, required=False,
                          description="If true, only return observations whose type is 'center'.")
@@ -298,6 +304,7 @@ def partial_tiles_failed(request, band_number: int):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+@extend_schema(summary="## Check database for a tile number")
 @api_view(["GET"])
 def partial_tiles_by_tile_number(request, band_number: int, tile_number: int):
     """
@@ -312,6 +319,7 @@ def partial_tiles_by_tile_number(request, band_number: int, tile_number: int):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+@extend_schema(summary="## Check total number of fields that we've done in 1D partial tiles")
 @api_view(["GET"])    
 def partial_tiles_completed(request, band_number: int):
     """
@@ -326,6 +334,7 @@ def partial_tiles_completed(request, band_number: int):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )   
 
+@extend_schema(summary="## Check partial tile database for hpx edge")
 @api_view(["GET"])
 def partial_tiles_hpx_edge(request, band_number: int):
     """
@@ -340,6 +349,7 @@ def partial_tiles_hpx_edge(request, band_number: int):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+@extend_schema(summary="## see constraints on partial_tile_1d_pipeline_band1")
 @api_view(["GET"])
 def partial_tiles_constraints(request, band_number: int):
     """
@@ -391,6 +401,10 @@ def update_single_sb_1d_pipeline(request):
         )
 
 @extend_schema(
+    summary="""
+    \nUpdate database to rerun a field
+    \n1. Clear the 1d_pipeline flag on the partial tile rows
+    """,
     parameters=[
         OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.QUERY, required=True,
                          description="Band number (1 or 2)"),
@@ -398,7 +412,7 @@ def update_single_sb_1d_pipeline(request):
     ]
 )
 @api_view(["POST"])
-def clear_partial_tile_1d_pipeline(request):
+def clear_partial_tile_1d_pipeline(request ):
     try:
         band_number = request.query_params.get("band_number")
         field_name = request.query_params.get("field_name")
@@ -411,6 +425,7 @@ def clear_partial_tile_1d_pipeline(request):
         )
 
 @extend_schema(
+    summary="2) Clear the validation flag on the observation_state rows",
     parameters=[
         OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.QUERY, required=True,
                          description="Band number (1 or 2)"),
@@ -447,7 +462,8 @@ def update_1d_pipeline_validation(request):
             {"error": str(e)},
             status=status.HTTP_400_BAD_REQUEST,
         )
-    
+
+@extend_schema(summary="Clear the validation flag for failed observation_state rows")    
 @api_view(["POST"])
 def reset_failed_1d_pipeline_validation(request):
     """
@@ -467,7 +483,8 @@ def reset_failed_1d_pipeline_validation(request):
             {"error": str(e)},
             status=status.HTTP_400_BAD_REQUEST,
         )
-    
+
+@extend_schema(summary="## Update ALL failed jobs to set 1d_pipeline_validation to null")    
 @api_view(["POST"])
 def reset_failed_1d_pipeline(request):
     """
@@ -488,6 +505,7 @@ def reset_failed_1d_pipeline(request):
     
     
 @extend_schema(
+    summary="## Clear running jobs that are not running",
     parameters=[
         OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.QUERY, required=True,
                          description="Band number (1 or 2)"),
@@ -516,6 +534,7 @@ def clear_running_jobs_not_running(request):
         )        
 
 @extend_schema(
+    summary="# -- -- Update running jobs to Null so they get restarted",
     parameters=[
         OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.QUERY, required=True,
                          description="Band number (1 or 2)"),
@@ -540,7 +559,7 @@ def restart_running_jobs_view(request):
             status=status.HTTP_400_BAD_REQUEST,
         )        
            
-
+@extend_schema(summary='## Also update type from "center" to "center - crosses projection boundary!"')
 @api_view(["POST"])
 def update_failed_partial_tiles_centre(request):
     """
