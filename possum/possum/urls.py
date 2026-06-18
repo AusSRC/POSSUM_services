@@ -6,6 +6,7 @@ from django.contrib.auth import views as auth_views
 from django.views.generic.base import RedirectView
 
 from survey import views
+from api.views import auth
 
 admin.site.site_header = "POSSUM Survey"
 admin.site.site_title = "POSSUM Survey"
@@ -22,6 +23,7 @@ urlpatterns += [
     path("admin/", admin.site.urls),
     path("oauth/", include('social_django.urls', namespace="social")),
     path("api/", include("api.urls")),
+    path("api/service-token/", auth.service_token, name="service-token"),
     # Password reset links
     path('password_reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
     path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
