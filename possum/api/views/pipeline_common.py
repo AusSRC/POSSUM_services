@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -9,6 +10,7 @@ from ..services.pipeline_common import (
     get_tiles_and_observations
 )
 
+@permission_classes([IsAuthenticatedOrReadOnly])
 @extend_schema(summary="check main tile database (for all bands)")
 @api_view(["GET"])
 def tiles(request):
@@ -21,6 +23,7 @@ def tiles(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+@permission_classes([IsAuthenticatedOrReadOnly])
 @extend_schema(summary="Get all tiles and associated observations")
 @api_view(["GET"])
 def tiles_observations(request, band_number: int):
@@ -33,6 +36,7 @@ def tiles_observations(request, band_number: int):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+@permission_classes([IsAuthenticatedOrReadOnly])
 @extend_schema(summary="Get all observations")
 @api_view(["GET"])
 def observations(request, band_number: int):

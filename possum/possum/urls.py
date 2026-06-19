@@ -23,7 +23,6 @@ urlpatterns += [
     path("admin/", admin.site.urls),
     path("oauth/", include('social_django.urls', namespace="social")),
     path("api/", include("api.urls")),
-    path("api/service-token/", auth.service_token, name="service-token"),
     # Password reset links
     path('password_reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
     path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
