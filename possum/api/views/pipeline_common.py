@@ -10,9 +10,9 @@ from ..services.pipeline_common import (
     get_tiles_and_observations
 )
 
-@permission_classes([IsAuthenticatedOrReadOnly])
 @extend_schema(summary="check main tile database (for all bands)")
 @api_view(["GET"])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def tiles(request):
     try:
         rows = get_all_tiles()
@@ -23,9 +23,9 @@ def tiles(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-@permission_classes([IsAuthenticatedOrReadOnly])
 @extend_schema(summary="Get all tiles and associated observations")
 @api_view(["GET"])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def tiles_observations(request, band_number: int):
     try:
         rows = get_tiles_and_observations(band_number)
@@ -36,9 +36,9 @@ def tiles_observations(request, band_number: int):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-@permission_classes([IsAuthenticatedOrReadOnly])
 @extend_schema(summary="Get all observations")
 @api_view(["GET"])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def observations(request, band_number: int):
     try:
         rows = get_observations(band_number)
