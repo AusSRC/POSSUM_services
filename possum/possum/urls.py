@@ -6,7 +6,6 @@ from django.contrib.auth import views as auth_views
 from django.views.generic.base import RedirectView
 
 from survey import views
-from api.views import auth
 
 admin.site.site_header = "POSSUM Survey"
 admin.site.site_title = "POSSUM Survey"
