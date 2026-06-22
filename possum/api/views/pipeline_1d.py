@@ -105,7 +105,7 @@ def check_partial_tiles_for_observation(request, band_number: int, field_name: s
                          description="Status to set for the tiles, e.g. 'Completed'")
     ]
 )
-@api_view(["POST"])
+@api_view(["PATCH"])
 def update_partial_tile_status(request):
     try:
         if not request.user.is_staff:
@@ -113,10 +113,10 @@ def update_partial_tile_status(request):
                 {"error": "Permission denied"},
                 status=403,
         )
-        band_number = request.query_params.get("band_number")
-        field_name = request.query_params.get("field_name")
-        tile_numbers = request.query_params.get("tile_numbers")
-        status_value = request.query_params.get("status")
+        band_number = request.data.get("band_number")
+        field_name = request.data.get("field_name")
+        tile_numbers = request.data.get("tile_numbers")
+        status_value = request.data.get("status")
 
         if not field_name or not tile_numbers or status_value is None:
             return Response(
@@ -125,10 +125,10 @@ def update_partial_tile_status(request):
             )
 
         rows_updated = update_partial_tile_1d_pipeline_status(
-            field_name,
-            tuple(tile_numbers),
-            band_number,
-            status_value,
+            observation=field_name,
+            tile_numbers=tuple(tile_numbers),
+            band_number=band_number,
+            status=status_value,
         )
 
         return Response(
@@ -229,7 +229,7 @@ def observations_completed_aussrc(request, band_number: int):
         )
 
 @api_view(["GET"])
-def boundary_issues(request, observation, band_number):
+def boundary_issues(request, band_number:int, observation:str):
     """
     Returns True/False if boundary issues are found for the given observation
     """
@@ -270,7 +270,7 @@ def full_single_sb_pipeline_table(request, band_number: int):
         return Response(
             {"error": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )        
+        )
 
 @extend_schema(summary="## Check database for running jobs, might be ghosts")    
 @api_view(["GET"])
