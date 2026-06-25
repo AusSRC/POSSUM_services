@@ -198,7 +198,7 @@ def get_tiles_with_filter(band_number, column_name, column_value, order_by_3d_pi
     if order_by_3d_pipeline_ingest:
         query += ' ORDER BY "3d_pipeline_ingest"'
        
-    return execute_query(query)
+    return execute_query(query, column_value)
 
 def get_tiles_that_had_processing_started(band_number, tile_id):
     """
