@@ -186,7 +186,7 @@ def get_tiles_with_filter(band_number, column_name, column_value, order_by_3d_pi
     ## Select tiles with conditions
     """
     # validate allowed column names
-    allowed_columns = ["3d_pipeline", "3d_pipeline_val", "3d_pipeline_ingest", "3d_val_link"]
+    allowed_columns = ["3d_pipeline", "3d_pipeline_val", "3d_pipeline_ingest", "3d_val_link", "tile"]
     column_name = column_name.strip().lower()
     if column_name not in allowed_columns:
         raise ValueError(f"Column '{column_name}' is not allowed. Must be one of {allowed_columns}")
@@ -194,11 +194,11 @@ def get_tiles_with_filter(band_number, column_name, column_value, order_by_3d_pi
         SELECT tile_3d.*
         FROM possum.tile_state_band{band_number} AS tile_3d
     """
-    query +=  " WHERE LOWER('{column_name}') = %s"
+    query +=  f' WHERE LOWER("{column_name}") = %s'
     if order_by_3d_pipeline_ingest:
         query += ' ORDER BY "3d_pipeline_ingest"'
        
-    return execute_query(query, column_value)
+    return execute_query(query, (column_value,))
 
 def get_tiles_that_had_processing_started(band_number, tile_id):
     """
