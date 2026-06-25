@@ -10,7 +10,8 @@ from ..views.pipeline_1d import (
     observations_non_edge_rows,
     boundary_issues,
     full_single_sb_pipeline_table,
-    update_single_sb_1d_pipeline
+    update_single_sb_1d_pipeline,
+    update_1d_pipeline_validation
 )
 
 User = get_user_model()
@@ -236,6 +237,32 @@ def test_update_partial_tile_status_with_tile_numbers(factory, admin_user, mocke
         tile_numbers=("11726", "11727", "11791", "11792"),
         band_number=1,
         status="Completed"
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data.get("rows_updated") == 1
+
+def test_update_1d_pipeline_validation(factory, admin_user, mocker):
+    """
+    Test update_1d_pipeline_validation with value
+    """
+    mocked = mocker.patch(
+        "api.views.pipeline_1d.update_1d_pipeline_table",
+        return_value=1
+    )
+    
+    request = factory.patch("/api/1d-pipeline/observations/update/1d_pipeline_validation/?"
+                            "band_number=1&"
+                            "field_name=EMU_1748-64&"
+                            "status=Completed")
+    force_authenticate(request, user=admin_user)
+    response = update_1d_pipeline_validation(request)
+
+    mocked.assert_called_once_with(
+        field_name="EMU_1748-64",
+        band_number="1",
+        status="Completed",
+        column_name='1d_pipeline_validation'
     )
 
     assert response.status_code == status.HTTP_200_OK

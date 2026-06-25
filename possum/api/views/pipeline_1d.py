@@ -7,6 +7,7 @@ from ..services.pipeline_1d import (
     find_boundary_issues,
     update_partial_tile_1d_pipeline_status,
     get_partial_tiles,
+    get_partial_tiles_with_sbid,
     get_partial_tiles_for_1d_pipeline_run,
     get_partial_tile_jobs_running,
     get_partial_tile_jobs_failed,
@@ -36,6 +37,19 @@ from ..services.pipeline_1d import (
 def partial_tiles(request, band_number: int):
     try:
         data = get_partial_tiles(band_number)
+        return Response(data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+@extend_schema(operation_id="retrieve_1d_pipeline_tile_sbid")
+@api_view(["GET"])
+def partial_tiles_sbid(request, band_number: int):
+    try:
+        data = get_partial_tiles_with_sbid(band_number)
         return Response(data, status=status.HTTP_200_OK)
 
     except Exception as e:

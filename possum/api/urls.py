@@ -19,6 +19,7 @@ from .views.pipeline_1d import (
     partial_tiles_failed,
     partial_tiles_completed,
     partial_tiles_hpx_edge,
+    partial_tiles_sbid,
     partial_tiles_constraints,
     partial_tiles_ready_for_pipeline,
     update_partial_tile_status,
@@ -170,12 +171,7 @@ urlpatterns = [
         name="3d-pipeline-update-3d-val-link"
     ),
 
-    # --- 1D endpoints ---   
-    path(
-        "1d-pipeline/observations/update/1d-pipeline-validation/",
-        update_1d_pipeline_validation,
-        name="observation-state-band-update-1d-pipeline-validation"
-    ),
+    # --- 1D endpoints ---       
     path(
         "1d-pipeline/observations/reset/1d-pipeline-validation/",
         reset_failed_1d_pipeline_validation,
@@ -190,6 +186,11 @@ urlpatterns = [
         "1d-pipeline/observations/update/single-sb-1d-pipeline/",
         update_single_sb_1d_pipeline,
         name="observation-state-band-update-single-sb-1d-pipeline"
+    ),
+    path(
+        "1d-pipeline/observations/update/1d-pipeline-validation/",
+        update_1d_pipeline_validation,
+        name="observation-state-band-update-1d-pipeline-validation"
     ),
     path(
         "1d-pipeline/observations/single-sb-1d-pipeline/fields-ready/band<int:band_number>/",
@@ -235,6 +236,11 @@ urlpatterns = [
         "1d-pipeline/partial-tiles/band<int:band_number>/",
         partial_tiles,
         name="partial-tiles-all",
+    ),
+    path(
+        "1d-pipeline/partial-tiles/sbid/band<int:band_number>/",
+        partial_tiles_sbid,
+        name="partial-tiles-sbid",
     ),
     path(
         "1d-pipeline/partial-tiles/band<int:band_number>/<int:tile_number>/",

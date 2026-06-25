@@ -158,6 +158,19 @@ def get_partial_tiles(band_number):
 
     return execute_query(sql)
 
+def get_partial_tiles_with_sbid(band_number):
+    """
+    Get partial tiles joined with observation table to get SBID
+    """
+    validate_band_number(band_number)
+    sql = f"""
+    SELECT p.*, o.sbid
+    FROM possum.partial_tile_1d_pipeline_band{band_number} AS p
+    LEFT JOIN possum.observation AS o ON p.observation = o.name 
+    """
+
+    return execute_query(sql)
+
 
 def get_partial_tiles_for_1d_pipeline_run(band_number):
     """
@@ -394,7 +407,7 @@ def get_fields_ready_single_SB_pipeline(band_number):
     validate_band_number(band_number)
 
     sql = f"""
-    SELECT name FROM possum.observation_state_band{band_number}
+    SELECT name, sbid FROM possum.observation_state_band{band_number}
     WHERE ("single_sb_1d_pipeline" IS NULL or "single_sb_1d_pipeline" = '')
     AND UPPER("cube_state") = 'COMPLETED';
     """
