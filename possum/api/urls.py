@@ -43,6 +43,7 @@ from .views.pipeline_1d import (
 from .views.pipeline_3d import (
     tiles_that_had_processing_started,
     tiles_order_by_3d_pipeline_val,
+    tiles_for_3d_plotting,
     tiles_for_completed_processing,
     tiles_for_ingest_running,
     tiles_for_running_jobs,
@@ -114,6 +115,11 @@ urlpatterns = [
         "3d-pipeline/tiles/tile_id/band<int:band_number>/<str:tile_id>/",
         tiles_for_tile_id,
         name="3d-pipeline-tiles-by-tile-id"
+    ),
+    path(
+        "3d-pipeline/tiles/plotting/band<int:band_number>/",        
+        tiles_for_3d_plotting,
+        name="3d-pipeline-tiles-for-plotting"
     ),
     path(
         "3d-pipeline/tiles/validation-link-doesnt-exist/band<int:band_number>/",

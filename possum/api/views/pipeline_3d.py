@@ -6,6 +6,7 @@ from rest_framework import status
 from ..services.pipeline_3d import (
     get_tiles_for_ingest,
     get_tiles_for_pipeline_run,
+    get_tiles_for_3d_plot,
     get_tiles_with_filter,
     get_tiles_for_completed_processing,
     get_tiles_order_by_3d_pipeline_val,
@@ -88,6 +89,17 @@ def tiles_for_running_jobs(request, band_number):
 def tiles_for_tile_id(request, band_number, tile_id):
     try:
         tiles = get_tiles_with_filter(band_number, column_name='tile', column_value=tile_id, order_by_3d_pipeline_ingest=False)
+        return Response(tiles)
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+@api_view(["GET"])    
+def tiles_for_3d_plotting(request, band_number):
+    try:
+        tiles = get_tiles_for_3d_plot(band_number)    
         return Response(tiles)
     except Exception as e:
         return Response(

@@ -140,6 +140,18 @@ def get_tiles_for_ingest(band_number):
     # flatten tile ids into an array
     return [row[0] for row in results]
 
+def get_tiles_for_3d_plot(band_number):
+    """
+    Get tiles with certain columns in certain order for 3d plotting
+    """
+    validate_band_number(band_number)
+    sql = f"""
+        SELECT tile, "3d_pipeline_val", "3d_val_link", "3d_pipeline_ingest", "3d_pipeline", "cube_state"
+        FROM possum.tile_state_band{band_number}
+    """
+    return execute_query(sql)
+
+
 # Extra queries for direct querying from Lerato
 def get_tiles_order_by_3d_pipeline_val(band_number):
     """
