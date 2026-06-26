@@ -34,10 +34,7 @@ def tiles_that_had_processing_started(request, band_number):
     try:
         tile_id = request.GET.get("tile_id")
         tiles = get_tiles_that_had_processing_started(band_number, tile_id)
-        return Response({
-            "success": True,
-            "tiles": tiles,
-        })
+        return Response(tiles)
     except Exception as e:
         return Response(
             {"error": str(e)},
@@ -49,11 +46,7 @@ def tiles_that_had_processing_started(request, band_number):
 def tiles_order_by_3d_pipeline_val(request, band_number):
     try:
         tiles = get_tiles_order_by_3d_pipeline_val(band_number)
-        return Response({
-                "success": True,
-                "band": band_number,
-                "tiles": tiles,
-            })
+        return Response(tiles)
     except Exception as e:
         return Response(
             {"error": str(e)},
@@ -71,11 +64,7 @@ def tiles_for_ingest_running(request, band_number):
     try:
         ordered = request.GET.get("order_by_3d_pipeline_ingest", "").lower() == "true"
         tiles = get_tiles_with_filter(band_number, column_name='3d_pipeline_ingest', column_value='IngestRunning', order_by_3d_pipeline_ingest=ordered)
-        return Response({
-                "success": True,
-                "band": band_number,
-                "tiles": tiles,
-            })
+        return Response(tiles)
     except Exception as e:
         return Response(
             {"error": str(e)},
@@ -87,11 +76,7 @@ def tiles_for_ingest_running(request, band_number):
 def tiles_for_running_jobs(request, band_number):
     try:
         tiles = get_tiles_with_filter(band_number, column_name='3d_pipeline_val', column_value='running')
-        return Response({
-                "success": True,
-                "band": band_number,
-                "tiles": tiles,
-            })
+        return Response(tiles)
     except Exception as e:
         return Response(
             {"error": str(e)},
@@ -103,11 +88,7 @@ def tiles_for_running_jobs(request, band_number):
 def tiles_for_tile_id(request, band_number, tile_id):
     try:
         tiles = get_tiles_with_filter(band_number, column_name='tile', column_value=tile_id, order_by_3d_pipeline_ingest=False)
-        return Response({
-                "success": True,
-                "band": band_number,
-                "tiles": tiles,
-            })
+        return Response(tiles)
     except Exception as e:
         return Response(
             {"error": str(e)},
@@ -119,11 +100,7 @@ def tiles_for_tile_id(request, band_number, tile_id):
 def tiles_for_completed_processing(request, band_number):
     try:
         tiles = get_tiles_for_completed_processing(band_number)
-        return Response({
-                "success": True,
-                "band": band_number,
-                "tiles": tiles,
-            })    
+        return Response(tiles)    
     except Exception as e:
         return Response(
             {"error": str(e)},
@@ -135,11 +112,7 @@ def tiles_for_completed_processing(request, band_number):
 def tiles_where_validation_link_doesnt_exist(request, band_number):
     try:
         tiles = get_tiles_where_no_validation_link(band_number)
-        return Response({
-                "success": True,
-                "band": band_number,
-                "tiles": tiles,
-            })    
+        return Response(tiles)    
     except Exception as e:
         return Response(
             {"error": str(e)},
@@ -156,11 +129,7 @@ def tiles_where_ingest_failed(request, band_number):
     try:
         ordered = request.GET.get("order_by_3d_pipeline_ingest", "").lower() == "true"
         tiles = get_tiles_with_filter(band_number, order_by_3d_pipeline_ingest=ordered)
-        return Response({
-                "success": True,
-                "band": band_number,
-                "tiles": tiles,
-            })
+        return Response(tiles)
     
     except Exception as e:
         return Response(
@@ -173,12 +142,7 @@ def tiles_where_ingest_failed(request, band_number):
 def tiles_ready_for_ingest(request, band_number):
     try:
         tiles = get_tiles_for_ingest(band_number)
-
-        return Response({
-            "success": True,
-            "band": band_number,
-            "tiles": tiles,
-        })
+        return Response(tiles)
     except Exception as e:
         return Response(
             {"error": str(e)},
@@ -190,11 +154,7 @@ def tiles_ready_for_ingest(request, band_number):
 def tiles_ready_for_3dpipeline(request, band_number):
     try:
         tiles = get_tiles_for_pipeline_run(band_number)        
-        return Response({
-            "success": True,
-            "band": band_number,
-            "tiles": tiles,
-        })
+        return Response(tiles)
 
     except Exception as e:
         return Response(

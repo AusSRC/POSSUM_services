@@ -274,6 +274,4 @@ def test_tiles_ready_for_ingest(factory, non_staff_user, mocker):
 
     mocked.assert_called_once_with(1) 
     assert response.status_code == status.HTTP_200_OK
-    assert response.data.get('success') == True
-    assert response.data.get('band') == 1
-    assert response.data.get('tiles') == expected_tiles
+    assert response.data == expected_tiles
