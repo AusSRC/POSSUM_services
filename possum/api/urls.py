@@ -23,6 +23,7 @@ from .views.pipeline_1d import (
     partial_tiles_constraints,
     partial_tiles_ready_for_pipeline,
     update_partial_tile_status,
+    new_partial_tiles,
     observation_by_name,
     get_failed_observations,
     observations_non_edge_rows,
@@ -63,6 +64,7 @@ from .views.pipeline_3d import (
 
 from .views.pipeline_common import (
     observations,
+    associated_tiles,
     tiles,
     tiles_observations
 )
@@ -308,12 +310,22 @@ urlpatterns = [
         update_failed_partial_tiles_centre,
         name="update-partial-tiles-type-center"
     ), 
+    path(
+        "1d-pipeline/partial-tiles/new/band<int:band_number>/",
+        new_partial_tiles,
+        name="insert-partial-tiles"
+    ), 
 
     #---- Common URLS non specific to 1D and 3D ---
     path(
         "common/tiles/",
         tiles,
         name="all-tiles"
+    ),
+    path(
+        "common/associated-tiles/<str:sbid>/",
+        associated_tiles,
+        name="associated-tiles"
     ),
     path(
         "common/tiles-observations/band<int:band_number>/",

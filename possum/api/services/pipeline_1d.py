@@ -143,7 +143,7 @@ def update_partial_1d_pipeline_type_center():
         AND pt.type = 'center'
         RETURNING pt.observation, pt.tile1, pt.type, pt."1d_pipeline";
     """
-    return execute_query(query)
+    return execute_update_query(query)
 
 def get_partial_tiles(band_number):
     """
@@ -535,7 +535,26 @@ def reset_1d_pipeline_failed(band_number):
             AND pt."1d_pipeline" = 'Failed'
             RETURNING ob1.name, ob1."1d_pipeline_validation";
     """
-    return execute_query(query)
+    return execute_update_query(query)
 
-
+def insert_partial_tiles(field_name, tile1, tile2, tile3, tile4, type, num_sources, band_number):
+    validate_band_number(band_number)
+    sql = f"""
+            INSERT INTO possum.partial_tile_1d_pipeline_band{band_number}
+            (observation, tile1, tile2, tile3, tile4, type, number_sources)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            -- If row already exists, then don't overwrite
+            ON CONFLICT (generated_key) DO NOTHING;
+        """    
+    args = (
+            field_name,  # observation
+            tile1 if tile1.isdigit() else None,  # tile_1,
+            tile2 if tile2.isdigit() else None,  # tile_2
+            tile3 if tile3.isdigit() else None,  # tile_3
+            tile4 if tile4.isdigit() else None,  # tile_4
+            type,  # type
+            num_sources if num_sources.isdigit() else None  # number_sources
+    )
+    return execute_update_query(sql, args)
+    
 

@@ -17,6 +17,27 @@ def get_observations(band_number):
     """
     return execute_query(sql, (band_number,))
 
+def get_associated_tiles(sbid):
+    sbid_sql = """
+        SELECT name
+        FROM possum.observation
+        WHERE sbid = %s;
+    """
+    rows = execute_query(sbid_sql, (sbid,))
+    if len(rows) < 1:
+        raise Exception(f"SB{sbid} not found in table.")
+    # get associated tiles
+    field_name = rows[0][0]
+    tiles_sql = """
+        SELECT tile
+        FROM possum.associated_tile
+        WHERE name = %s
+    """
+    rows = execute_query(tiles_sql, (field_name,))
+    tile_list = [row[0] for row in rows]
+    
+    return tile_list, field_name
+
 def get_tiles_and_observations(band_number):
     """
     Get all tiles and associated observations for a given band number.

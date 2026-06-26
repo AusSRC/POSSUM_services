@@ -29,7 +29,8 @@ from ..services.pipeline_1d import (
     get_observations_non_edge_rows,
     get_observation_by_name,
     get_observation_failed,
-    get_observation_completed_aussrc
+    get_observation_completed_aussrc,
+    insert_partial_tiles
 )
 
 @extend_schema(operation_id="retrieve_1d_pipeline_tile_all")
@@ -159,6 +160,29 @@ def update_partial_tile_status(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
+
+@api_view(["POST"])
+def new_partial_tiles(request, band_number: int):
+    try:
+        field_name = request.data.get("field_name")
+        type = request.data.get("type")
+        num_sources = request.data.get("num_sources")
+        tile1 = request.data.get("tile1")
+        tile2 = request.data.get("tile2")
+        tile3 = request.data.get("tile3")
+        tile4 = request.data.get("tile4")
+        data = insert_partial_tiles(
+                field_name = field_name,
+                tile1 = tile1, tile2 = tile2, tile3 = tile3, tile4 = tile4,
+                type = type, num_sources = num_sources, band_number = band_number
+        )
+        return Response({"rows_inserted": data}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+    
 @extend_schema(
     summary="Check fields by observation name",
     parameters=[

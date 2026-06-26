@@ -7,7 +7,8 @@ from rest_framework import status
 from ..services.pipeline_common import (
     get_observations,
     get_all_tiles,
-    get_tiles_and_observations
+    get_tiles_and_observations,
+    get_associated_tiles
 )
 
 @extend_schema(summary="check main tile database (for all bands)")
@@ -30,6 +31,17 @@ def tiles_observations(request, band_number: int):
     try:
         rows = get_tiles_and_observations(band_number)
         return Response(rows, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+@api_view(["GET"])
+def associated_tiles(request, sbid: str):
+    try:
+        tile_list, field_name = get_associated_tiles(sbid)
+        return Response({"tile_list": tile_list, "field_name": field_name}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response(
             {"error": str(e)},
