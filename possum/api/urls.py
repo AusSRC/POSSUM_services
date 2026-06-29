@@ -15,6 +15,7 @@ from .views.pipeline_1d import (
     boundary_issues,
     partial_tiles,
     partial_tiles_by_tile_number,
+    partial_tiles_by_observation_name,
     partial_tiles_running,
     partial_tiles_failed,
     partial_tiles_completed,
@@ -22,6 +23,7 @@ from .views.pipeline_1d import (
     partial_tiles_sbid,
     partial_tiles_constraints,
     partial_tiles_ready_for_pipeline,
+    check_partial_tiles_for_observation,
     update_partial_tile_status,
     new_partial_tiles,
     observation_by_name,
@@ -254,6 +256,16 @@ urlpatterns = [
         "1d-pipeline/partial-tiles/band<int:band_number>/<int:tile_number>/",
         partial_tiles_by_tile_number,
         name="partial-tiles-by-tile-number",
+    ),
+    path(
+        "1d-pipeline/partial-tiles/skip-boundary-issues/band<int:band_number>/<str:field_name>/",
+        partial_tiles_by_observation_name,
+        name="partial-tiles-by-observation-skip-boundary",
+    ),
+    path(
+        "1d-pipeline/partial-tiles/band<int:band_number>/<str:field_name>/",
+        check_partial_tiles_for_observation,
+        name="check_partial_tiles_for_observation",
     ),
     path(
         "1d-pipeline/partial-tiles/running/band<int:band_number>/",

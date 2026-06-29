@@ -7,6 +7,7 @@ from ..services.pipeline_1d import (
     find_boundary_issues,
     update_partial_tile_1d_pipeline_status,
     get_partial_tiles,
+    get_partial_tiles_by_observation,
     get_partial_tiles_with_sbid,
     get_partial_tiles_for_1d_pipeline_run,
     get_partial_tile_jobs_running,
@@ -70,7 +71,40 @@ def partial_tiles_ready_for_pipeline(request, band_number: int):
             {"error": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
-
+    
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="band_number",
+            type=int,
+            location=OpenApiParameter.PATH,
+            description="Band number (1 or 2)",
+        ),
+        OpenApiParameter(
+            name="field_name",
+            type=str,
+            location=OpenApiParameter.PATH,
+            description="Name of the observation field to check."
+        ),
+        OpenApiParameter(
+            name="skip_boundary_issues",
+            type=bool,
+            location=OpenApiParameter.QUERY
+        ),
+    ]
+)
+@api_view(["GET"])
+def partial_tiles_by_observation_name(request, band_number: int, field_name: str):
+    try:
+        skip_boundary_issues = request.GET.get("skip_boundary_issues", "").lower() == "true"
+        data = get_partial_tiles_by_observation(band_number, field_name, skip_boundary_issues)
+        return Response(data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+        )
+    
 @extend_schema(
     summary="Check partial tiles for an observation field",
     parameters=[
@@ -89,17 +123,18 @@ def partial_tiles_ready_for_pipeline(request, band_number: int):
         OpenApiParameter(
             name="crosses_centre",
             type=bool,
-            location=OpenApiParameter.PATH,
+            location=OpenApiParameter.QUERY,
             description="If true, only return observations whose type starts with 'center - crosses'."
         ),
     ]
 )
 @api_view(["GET"])
-def check_partial_tiles_for_observation(request, band_number: int, field_name: str, crosses_centre: bool):
+def check_partial_tiles_for_observation(request, band_number: int, field_name: str):
     """
     ## Check partial tile database for a field
     """
     try:
+        crosses_centre = request.GET.get("crosses_centre", "").lower() == "true"
         data = check_partial_tile_for_observation_field(band_number, field_name, crosses_centre)
         return Response(data, status=status.HTTP_200_OK)
     

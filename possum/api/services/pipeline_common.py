@@ -23,7 +23,7 @@ def get_associated_tiles(sbid):
         FROM possum.observation
         WHERE sbid = %s;
     """
-    rows = execute_query(sbid_sql, (sbid,))
+    rows = execute_query(sbid_sql, (sbid,), get_colnames=False)
     if len(rows) < 1:
         raise Exception(f"SB{sbid} not found in table.")
     # get associated tiles
@@ -33,7 +33,7 @@ def get_associated_tiles(sbid):
         FROM possum.associated_tile
         WHERE name = %s
     """
-    rows = execute_query(tiles_sql, (field_name,))
+    rows = execute_query(tiles_sql, (field_name,), get_colnames=False)
     tile_list = [row[0] for row in rows]
     
     return tile_list, field_name

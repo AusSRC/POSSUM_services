@@ -20,8 +20,9 @@ def find_boundary_issues(observation, band_number):
             WHERE observation = %s AND LOWER(type) like '%%crosses projection boundary%%'
         ) AS match_found;
     """
-    results = execute_query(query, (observation,))
-    issues_found = results[0][0]
+    results = execute_query(query, (observation,), get_colnames=False)
+    issues_found = results[0]
+    print(f"Projection boundary issues found: {issues_found}")
     if issues_found is True:
         print("Boundary issues found.")
     else:
@@ -217,10 +218,13 @@ def check_partial_tile_for_observation_field(band_number, field_name, crosses_ce
         WHERE ob.name = pt.observation AND ob.name = ob1.name
         AND ob.name = %s
      """
+     params = (field_name,)
      if crosses_centre:
-         sql += """ AND LOWER("type") LIKE 'center - crosses%'"""
+         sql += f""" AND LOWER("type") LIKE %s"""
+         params += ('center - crosses%',)
      sql += " ORDER BY id DESC;"    
-     return execute_query(sql, (field_name,))
+
+     return execute_query(sql, params)
 
 
 def get_partial_tile_jobs_running(band_number):
@@ -279,6 +283,23 @@ def get_partial_tile_by_tile_number(band_number, tile_number):
         ORDER BY id DESC;
     """
     return execute_query(query, (tile_number,))
+
+def get_partial_tiles_by_observation(band_number, fieldname, skip_boundary_issues):
+    """
+    For polarimetry github: summary_plot_1D_partial_tiles.py
+    """
+    validate_band_number(band_number)
+    sql = f"""
+            SELECT LOWER("1d_pipeline") AS "1d_pipeline", tile1, tile2, tile3, tile4
+            FROM possum.partial_tile_1d_pipeline_band{band_number}
+            WHERE observation = %s
+          """
+    params = (fieldname,)
+    if skip_boundary_issues:
+        sql += " AND LOWER(type) not like %s"
+        params += ('%crosses projection boundary%', )
+
+    return execute_query(sql, params)                 
 
 def get_partial_tiles_with_hpx_edge(band_number):
     """
@@ -424,9 +445,7 @@ def get_full_table_single_SB_pipeline(band_number):
     sql = f"""
         SELECT * FROM possum.observation_state_band{band_number}
     """
-    rows = execute_query(sql)
-
-    return rows
+    return execute_query(sql)
 
 def get_observation_by_name(band_number, name):
     """

@@ -38,7 +38,7 @@ def execute_update_query(query, params=None, verbose=False):
 
 
 def execute_query(
-    query, params=None, verbose=False
+    query, params=None, verbose=False, get_colnames=True
 ):
     """
     Execute a SQL query and return the results.
@@ -63,12 +63,15 @@ def execute_query(
 
             cursor.execute(query, params)
 
-            if cursor.description is not None:
+            if get_colnames and cursor.description is not None:
                 colnames = [desc[0] for desc in cursor.description]
                 results = [
                     dict(zip(colnames, row))
                     for row in cursor.fetchall()
                 ]
+            else:
+                results = cursor.fetchall()
+    
     except Exception as e:
         print(f"An error occurred: {e}")
         raise

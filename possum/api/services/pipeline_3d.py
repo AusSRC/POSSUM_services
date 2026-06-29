@@ -136,7 +136,7 @@ def get_tiles_for_ingest(band_number):
         TRIM(tile_3d."3d_pipeline_ingest") = '')
         ORDER BY tile
     """
-    results = execute_query(query)
+    results = execute_query(query, get_colnames=False)
     # flatten tile ids into an array
     return [row[0] for row in results]
 
