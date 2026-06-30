@@ -1,6 +1,8 @@
 import pytest
 
+
 from django.contrib.auth import get_user_model
+from django.urls import resolve
 from rest_framework import status
 from rest_framework.test import APIRequestFactory, force_authenticate
 from ..views.pipeline_3d import (
@@ -33,6 +35,9 @@ def factory():
     return APIRequestFactory()
 
 #----- update_3d_pipeline_val tests -----
+def test_update_3d_pipeline_val_resolve():
+    match = resolve("/api/3d-pipeline/tiles/update/3d_pipeline_val/")
+    assert match.func == update_3d_pipeline_val
 
 def test_update_3d_pipeline_val_with_non_admin_user(factory, non_staff_user):
     """
@@ -41,6 +46,7 @@ def test_update_3d_pipeline_val_with_non_admin_user(factory, non_staff_user):
     request = factory.patch("/api/3d-pipeline/tiles/update/3d_pipeline_val/?band_number=1"
                             "&tile_number=12345"
                             "&3d_pipeline_val=Completed")
+    
     force_authenticate(request, user=non_staff_user)
     response = update_3d_pipeline_val(request)
     
@@ -125,6 +131,10 @@ def test_update_3d_pipeline_val(factory, admin_user, mocker):
     assert response.data.get('rows_updated') == 1
 
 #----- update_3d_val_link tests -----
+def test_update_3d_val_link_resolve():
+    match = resolve("/api/3d-pipeline/tiles/update/3d_val_link/")
+    assert match.func == update_3d_val_link
+
 def test_update_3d_val_link(factory, admin_user, mocker):
     """
     Test setting 3d_val_link to a value
@@ -191,6 +201,10 @@ def test_update_3d_val_link_with_non_admin_user(factory, non_staff_user):
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 #----- update_3d_pipeline tests -----
+def test_update_3d_pipeline_resolve():
+    match = resolve("/api/3d-pipeline/tiles/update/3d_pipeline/")
+    assert match.func == update_3d_pipeline
+
 def test_update_3d_pipeline(factory, admin_user, mocker):
     """
     Test setting 3d_pipeline to a value
@@ -257,18 +271,22 @@ def test_update_3d_pipeline_with_non_admin_user(factory, non_staff_user):
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 #----- tiles_ready_for_ingest tests -----
-   
+def test_tiles_ready_for_ingest_resolve():
+    match = resolve("/api/3d-pipeline/tiles/ready-for-ingest/band1/")
+    assert match.func == tiles_ready_for_ingest
+    assert match.kwargs == {"band_number": 1}
+
 def test_tiles_ready_for_ingest(factory, non_staff_user, mocker):
     expected_tiles=[
-            {"tile": 5184, "ra_deg": 0, "dec_deg": 8.386, "gl": 101.797, "gb": -52.363},
-            {"tile": 5185, "ra_deg": 2.812, "dec_deg": 8.386, "gl": 106.196, "gb": -53.175}
+            {"tile": 5184},
+            {"tile": 5185}
     ]
     mocked = mocker.patch(
         "api.views.pipeline_3d.get_tiles_for_ingest",
         return_value=expected_tiles
     )
 
-    request = factory.get("/api/3d-pipeline/tiles/tiles_ready_for_ingest/")
+    request = factory.get("/api/3d-pipeline/tiles/ready-for-ingest/band1/")
     force_authenticate(request, user=non_staff_user)
     response = tiles_ready_for_ingest(request, 1)
 

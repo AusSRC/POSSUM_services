@@ -3,6 +3,7 @@
 import pytest
 
 from django.contrib.auth import get_user_model
+from django.urls import resolve
 from rest_framework import status
 from rest_framework.test import APIRequestFactory, force_authenticate
 
@@ -30,6 +31,9 @@ def factory():
 # ----------------------------------------------------------------------
 # tiles
 # ----------------------------------------------------------------------
+def test_tiles_resolve():
+    match = resolve("/api/common/tiles/")
+    assert match.func == tiles
 
 def test_tiles_success(factory, test_user, mocker):
     expected_rows = [
@@ -67,6 +71,10 @@ def test_tiles_exception(factory, test_user, mocker):
 # ----------------------------------------------------------------------
 # tiles_observations
 # ----------------------------------------------------------------------
+def test_tiles_observations_resolve():
+    match = resolve("/api/common/tiles-observations/band1/")
+    assert match.func == tiles_observations
+    assert match.kwargs == {"band_number": 1}
 
 def test_tiles_observations_success(factory, test_user, mocker):
     expected_rows = [
@@ -79,7 +87,7 @@ def test_tiles_observations_success(factory, test_user, mocker):
         return_value=expected_rows,
     )
 
-    request = factory.get("/api/common/tiles-observations/1/")
+    request = factory.get("/api/common/tiles-observations/band1/")
     force_authenticate(request, user=test_user)
     response = tiles_observations(request, 1)
 
@@ -101,6 +109,10 @@ def test_tiles_observations_exception(factory, test_user):
 # ----------------------------------------------------------------------
 # observations
 # ----------------------------------------------------------------------
+def test_observations_resolve():
+    match = resolve("/api/common/observations/band1/")
+    assert match.func == observations
+    assert match.kwargs == {"band_number": 1}
 
 def test_observations_success(factory, test_user, mocker):
     expected_rows = [
@@ -113,7 +125,7 @@ def test_observations_success(factory, test_user, mocker):
         return_value=expected_rows,
     )
 
-    request = factory.get("/api/common/observations/1/")
+    request = factory.get("/api/common/observations/band1/")
     force_authenticate(request, user=test_user)
     response = observations(request, 1)
 
