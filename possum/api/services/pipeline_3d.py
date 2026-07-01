@@ -206,7 +206,11 @@ def get_tiles_with_filter(band_number, column_name, column_value, order_by_3d_pi
         SELECT tile_3d.*
         FROM possum.tile_state_band{band_number} AS tile_3d
     """
-    query +=  f' WHERE LOWER("{column_name}") = %s'
+    if column_name in ["3d_pipeline_val", "3d_pipeline_ingest"]:
+        # match all cases for status e.g. completed vs Completed
+        query +=  f' WHERE LOWER("{column_name}") = %s'
+    else:
+        query +=  f' WHERE {column_name} = %s'
     if order_by_3d_pipeline_ingest:
         query += ' ORDER BY "3d_pipeline_ingest"'
        

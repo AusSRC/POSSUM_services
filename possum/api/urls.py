@@ -116,7 +116,7 @@ urlpatterns = [
         name="3d-pipeline-tiles-running-jobs"
     ),
     path(
-        "3d-pipeline/tiles/tile_id/band<int:band_number>/<str:tile_id>/",
+        "3d-pipeline/tiles/tile-id/band<int:band_number>/<str:tile_id>/",
         tiles_for_tile_id,
         name="3d-pipeline-tiles-by-tile-id"
     ),
@@ -223,11 +223,6 @@ urlpatterns = [
         name="observations-by-name",
     ),
     path(
-        "1d-pipeline/observations/complete-partial-tiles/band<int:band_number>/",
-        observations_complete_partial_tiles,
-        name="observations-complete-partial-tiles",
-    ),
-    path(
         "1d-pipeline/observations/non-edge-rows/band<int:band_number>/",
         observations_non_edge_rows,
         name="observations-non-edge-rows",
@@ -276,6 +271,11 @@ urlpatterns = [
         "1d-pipeline/partial-tiles/failed/band<int:band_number>",
         partial_tiles_failed,
         name="check_failed_partial_tile_jobs",
+    ),
+    path(
+        "1d-pipeline/partial-tiles/complete-partial-tiles/band<int:band_number>/",
+        observations_complete_partial_tiles,
+        name="complete-partial-tiles",
     ),
     path(
         "1d-pipeline/partial-tiles/hpx-edge/band<int:band_number>/",
