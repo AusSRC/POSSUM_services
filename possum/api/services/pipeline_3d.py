@@ -15,8 +15,6 @@ def update_3d_pipeline_table(tile_number, band_number, status, column_name):
         - Failed (Job failed to run)
         - WaitingForValidation (Job has finished running successfully, waiting for human validation)
         - Good/Bad (Currently has to be manually set after human validation)
-    Possible values for '3d_pipeline':
-        - A timestamp when the job has completed.
 
     Args:
     tile_number (str): The tile number to update.
@@ -29,7 +27,6 @@ def update_3d_pipeline_table(tile_number, band_number, status, column_name):
     # validate params
     validate_band_number(band_number)
     if column_name not in (
-        "3d_pipeline",
         "3d_pipeline_val",
         "3d_pipeline_ingest",
         "3d_val_link",
@@ -47,6 +44,44 @@ def update_3d_pipeline_table(tile_number, band_number, status, column_name):
     """
     return execute_update_query(query, (status, tile_number))
 
+def update_3d_pipeline_timestamp(tile_number, band_number, timestamp):
+    """
+    Update the 'tile_state_band{band_number}' table for 3d_pipeline.
+    Possible values for '3d_pipeline':
+        - A timestamp when the job has completed.
+
+    Args:
+    tile_number (str): The tile number to update.
+    band_number (str): 1 or 2
+    timestamp (str): Timestamp to set or NOW if unset
+     
+    Return: 0 if tile was not found, 1 if successful
+    """
+    # validate params
+    validate_band_number(band_number)
+    print(
+        f"Updating POSSUM tile database table for band{band_number} with 3d_pipeline to {timestamp}"
+    )
+    if timestamp is None:
+        # Use DB server time
+        query = f"""
+            UPDATE possum.tile_state_band{band_number}
+            SET "3d_pipeline" = NOW()
+            WHERE tile = %s; -- tile_number
+        """
+        params = (tile_number,)
+    else:    
+        # Format as 'YYYY-MM-DD HH:MM:SS' and cast explicitly (not sure why, but Erik did this)
+        ts_str = timestamp.replace(microsecond=0).isoformat(sep=" ")
+        query = f"""
+            UPDATE possum.tile_state_band{band_number}
+            SET "3d_pipeline" = %s::timestamp
+            WHERE tile = %s; -- tile_number
+        """
+        params =  (ts_str, tile_number)
+
+    return execute_update_query(query, params)
+    
 def reset_3d_pipeline_val_waiting(band_number):
     """
     Update 3d_pipeline to null where 3d_pipeline_val = 'WaitingForValidation'

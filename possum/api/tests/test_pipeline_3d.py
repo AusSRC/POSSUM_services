@@ -1,3 +1,6 @@
+import datetime
+import zoneinfo
+
 import pytest
 
 
@@ -311,22 +314,24 @@ def test_update_3d_pipeline(factory, admin_user, mocker):
     Test setting 3d_pipeline to a value
     """
     mocked = mocker.patch(
-        "api.views.pipeline_3d.update_3d_pipeline_table",
+        "api.views.pipeline_3d.update_3d_pipeline_timestamp",
         return_value=1
     )
 
-    request = factory.patch("/api/3d-pipeline/tiles/update/3d_pipeline/?"
-                            "band_number=1&"
-                            "tile_number=12345&"
-                            "3d_pipeline=2025-12-12 00:00:00")
+    request = factory.patch("/api/3d-pipeline/tiles/update/3d_pipeline/",
+                            {
+                             "band_number":1,
+                             "tile_number":12345,
+                             "timestamp":"2025-12-12 00:00:00"
+                            },
+                            format="json")
     force_authenticate(request, user=admin_user)
     response = update_3d_pipeline(request)
 
     mocked.assert_called_once_with(
-        tile_number="12345",
-        band_number="1",
-        status="2025-12-12 00:00:00",
-        column_name="3d_pipeline"
+        tile_number=12345,
+        band_number=1,
+        timestamp= datetime.datetime(2025, 12, 12, 0, 0, tzinfo=zoneinfo.ZoneInfo(key='UTC'))
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -338,21 +343,23 @@ def test_update_3d_pipeline_null(factory, admin_user, mocker):
     Test setting 3d_pipeline to null
     """
     mocked = mocker.patch(
-        "api.views.pipeline_3d.update_3d_pipeline_table",
+        "api.views.pipeline_3d.update_3d_pipeline_timestamp",
         return_value=1
     )
 
-    request = factory.patch("/api/3d-pipeline/tiles/update/3d_pipeline/?"
-                            "band_number=1&"
-                            "tile_number=12345")
+    request = factory.patch("/api/3d-pipeline/tiles/update/3d_pipeline/",
+                            {
+                            "band_number": 1,
+                            "tile_number": 12345,
+                            "timestamp": None
+                            }, format="json")
     force_authenticate(request, user=admin_user)
     response = update_3d_pipeline(request)
 
     mocked.assert_called_once_with(
-        tile_number="12345",
-        band_number="1",
-        status=None,
-        column_name="3d_pipeline"
+        tile_number=12345,
+        band_number=1,
+        timestamp=None
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.data.get('success') == True

@@ -2,7 +2,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-
+from ..serializers import UpdateTileStatusSerializer
 from ..services.pipeline_1d import (
     find_boundary_issues,
     update_partial_tile_1d_pipeline_status,
@@ -145,15 +145,7 @@ def check_partial_tiles_for_observation(request, band_number: int, field_name: s
         )  
 
 @extend_schema(
-    parameters=[
-        OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.QUERY, required=True,
-                         description="Band number (1 or 2)"),
-        OpenApiParameter(name="field_name", type=str, location=OpenApiParameter.QUERY, required=True),
-        OpenApiParameter(name="tile_numbers", type=str, location=OpenApiParameter.QUERY, required=True,
-                         description="Comma-separated list of tile numbers (e.g. '1,2,3,4')"),
-        OpenApiParameter(name="status", type=str, location=OpenApiParameter.QUERY, required=True,
-                         description="Status to set for the tiles, e.g. 'Completed'")
-    ]
+    request=UpdateTileStatusSerializer
 )
 @api_view(["PATCH"])
 def update_partial_tile_status(request):
@@ -163,19 +155,16 @@ def update_partial_tile_status(request):
                 {"error": "Permission denied"},
                 status=403,
         )
-        band_number = request.data.get("band_number")
-        field_name = request.data.get("field_name")
-        tile_numbers = request.data.get("tile_numbers")
-        status_value = request.data.get("status")
-
-        if not field_name or not tile_numbers or status_value is None:
-            return Response(
-                {"error": "field_name, tile_numbers, and status are required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer = UpdateTileStatusSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        band_number = data["band_number"]
+        field_name = data["field_name"]
+        tile_numbers = data["tile_numbers"]
+        status_value = data["status"]
 
         rows_updated = update_partial_tile_1d_pipeline_status(
-            observation=field_name,
+            field_name=field_name,
             tile_numbers=tuple(tile_numbers),
             band_number=band_number,
             status=status_value,

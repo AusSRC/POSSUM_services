@@ -146,7 +146,7 @@ def test_update_partial_tile_status_with_tile_numbers(factory, admin_user, mocke
                            {
                             "band_number": 1,
                             "field_name": "EMU_1748-64",
-                            "tile_numbers": ("11726", "11727", "11791", "11792"),
+                            "tile_numbers": ["11726", "11727", "11791", "11792"],
                             "status": "Completed",
                             },
                             format="json")
@@ -186,7 +186,7 @@ def test_update_partial_tile_status_not_admin(factory, non_staff_user):
                            {
                             "band_number": 1,
                             "field_name": "EMU_1748-64",
-                            "tile_numbers": ("11726", "11727", "11791", "11792"),
+                            "tile_numbers": ["11726", "11727", "11791", "11792"],
                             "status": "Completed",
                             },
                             format="json")

@@ -2,7 +2,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-
+from ..serializers import UpdateTileTimestampSerializer
 from ..services.pipeline_3d import (
     get_tiles_for_ingest,
     get_tiles_for_pipeline_run,
@@ -16,6 +16,7 @@ from ..services.pipeline_3d import (
     reset_3d_pipeline_val_running,
     reset_3d_pipeline_val_waiting,
     update_3d_pipeline_table,
+    update_3d_pipeline_timestamp
 )
 
 
@@ -175,13 +176,7 @@ def tiles_ready_for_3dpipeline(request, band_number):
         )
 
 @extend_schema(
-    parameters=[
-        OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.QUERY, required=True,
-                         description="Band number (1 or 2)"),
-        OpenApiParameter(name="tile_number", type=int, location=OpenApiParameter.QUERY, required=True),
-        OpenApiParameter(name="3d_pipeline", type=str, location=OpenApiParameter.QUERY, required=False,
-                         description="A timestamp e.g. 2025-11-25 19:43:29.286359. If omitted, status will be set to NULL")
-    ]
+    request=UpdateTileTimestampSerializer
 )
 @api_view(["PATCH"])
 def update_3d_pipeline(request):
@@ -191,14 +186,16 @@ def update_3d_pipeline(request):
                 {"error": "Permission denied"},
                 status=403,
         )
-        band_number = request.query_params.get("band_number")
-        tile_number = request.query_params.get("tile_number")
-        status = request.query_params.get("3d_pipeline")
-        rows = update_3d_pipeline_table(
+        serializer = UpdateTileTimestampSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        band_number = data["band_number"]
+        tile_number = data["tile_number"]
+        ts = data["timestamp"]
+        rows = update_3d_pipeline_timestamp(
             tile_number=tile_number,
             band_number=band_number,
-            status=status,
-            column_name="3d_pipeline"
+            timestamp=ts
         )
 
         return Response({
