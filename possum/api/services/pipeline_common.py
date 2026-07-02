@@ -33,7 +33,7 @@ def get_associated_tiles(sbid):
         FROM possum.associated_tile
         WHERE name = %s
     """
-    rows = execute_query(tiles_sql, (field_name,), get_colnames=False)
+    rows = execute_query(tiles_sql, (field_name,))
     tile_list = [row[0] for row in rows]
     
     return tile_list, field_name

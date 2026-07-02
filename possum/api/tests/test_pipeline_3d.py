@@ -84,7 +84,7 @@ def test_update_3d_pipeline_val_null(factory, admin_user, mocker):
     assert response.data.get('success') == True
     assert response.data.get('rows_updated') == 1
 
-def test_update_3d_pipeline_val(factory, admin_user, mocker):
+def test_update_3d_pipeline_val_success(factory, admin_user, mocker):
     """
     Test setting 3d_pipeline_val to a value
     """
@@ -107,32 +107,6 @@ def test_update_3d_pipeline_val(factory, admin_user, mocker):
         column_name="3d_pipeline_val"
     )
 
-    assert response.status_code == status.HTTP_200_OK
-    assert response.data.get('success') == True
-    assert response.data.get('rows_updated') == 1
-
-def test_update_3d_pipeline_val(factory, admin_user, mocker):
-    """
-    Test setting 3d_pipeline_val to a value
-    """
-    mocked = mocker.patch(
-        "api.views.pipeline_3d.update_3d_pipeline_table",
-        return_value=1
-    )
-
-    request = factory.patch("/api/3d-pipeline/tiles/update/3d_pipeline_val/?"
-                            "band_number=1&"
-                            "tile_number=12345&"
-                            "3d_pipeline_val=Completed")
-    force_authenticate(request, user=admin_user)
-    response = update_3d_pipeline_val(request)
-
-    mocked.assert_called_once_with(
-        tile_number="12345",
-        band_number="1",
-        status="Completed",
-        column_name="3d_pipeline_val"
-    )
     assert response.status_code == status.HTTP_200_OK
     assert response.data.get('success') == True
     assert response.data.get('rows_updated') == 1
@@ -181,7 +155,7 @@ def test_update_3d_pipeline_ingest_null(factory, admin_user, mocker):
     assert response.data.get('success') == True
     assert response.data.get('rows_updated') == 1
 
-def test_update_3d_pipeline_ingest(factory, admin_user, mocker):
+def test_update_3d_pipeline_ingest_success(factory, admin_user, mocker):
     """
     Test setting 3d_pipeline_ingest to a value
     """
@@ -206,32 +180,6 @@ def test_update_3d_pipeline_ingest(factory, admin_user, mocker):
 
     assert response.status_code == status.HTTP_200_OK
     assert response.data.get('success') == True
-    assert response.data.get('rows_updated') == 1
-
-def test_update_3d_pipeline_ingest(factory, admin_user, mocker):
-    """
-    Test setting 3d_pipeline_ingest to a value
-    """
-    mocked = mocker.patch(
-        "api.views.pipeline_3d.update_3d_pipeline_table",
-        return_value=1
-    )
-
-    request = factory.patch("/api/3d-pipeline/tiles/update/3d_pipeline_ingest/?"
-                            "band_number=1&"
-                            "tile_number=12345&"
-                            "3d_pipeline_ingest=Completed")
-    force_authenticate(request, user=admin_user)
-    response = update_3d_pipeline_ingest(request)
-
-    mocked.assert_called_once_with(
-        tile_number="12345",
-        band_number="1",
-        status="Completed",
-        column_name="3d_pipeline_ingest"
-    )
-    assert response.status_code == status.HTTP_200_OK
-    assert response.data.get('success') == True
     assert response.data.get('rows_updated') == 1    
 
 #----- update_3d_val_link tests -----
@@ -239,7 +187,7 @@ def test_update_3d_val_link_resolve():
     match = resolve("/api/3d-pipeline/tiles/update/3d_val_link/")
     assert match.func == update_3d_val_link
 
-def test_update_3d_val_link(factory, admin_user, mocker):
+def test_update_3d_val_link_success(factory, admin_user, mocker):
     """
     Test setting 3d_val_link to a value
     """
@@ -309,7 +257,7 @@ def test_update_3d_pipeline_resolve():
     match = resolve("/api/3d-pipeline/tiles/update/3d_pipeline/")
     assert match.func == update_3d_pipeline
 
-def test_update_3d_pipeline(factory, admin_user, mocker):
+def test_update_3d_pipeline_success(factory, admin_user, mocker):
     """
     Test setting 3d_pipeline to a value
     """
@@ -384,7 +332,7 @@ def test_tiles_ready_for_ingest_resolve():
     assert match.func == tiles_ready_for_ingest
     assert match.kwargs == {"band_number": 1}
 
-def test_tiles_ready_for_ingest(factory, non_staff_user, mocker):
+def test_tiles_ready_for_ingest_success(factory, non_staff_user, mocker):
     expected_tiles=[
             {"tile": 5184},
             {"tile": 5185}
@@ -409,7 +357,7 @@ def test_tiles_ready_for_3d_resolve():
     assert match.func == tiles_ready_for_3dpipeline
     assert match.kwargs == {"band_number": 1}
 
-def test_tiles_ready_for_3d(factory, non_staff_user, mocker):
+def test_tiles_ready_for_3d_success(factory, non_staff_user, mocker):
     expected_tiles=[
             {"tile": 5184},
             {"tile": 5185}
@@ -434,7 +382,7 @@ def test_tiles_for_tile_id_resolve():
     assert match.func == tiles_for_tile_id
     assert match.kwargs == {"band_number": 1, "tile_id": "12345"}
 
-def test_tiles_for_tile_id(factory, non_staff_user, mocker):
+def test_tiles_for_tile_id_success(factory, non_staff_user, mocker):
     expected_tiles=[
             {"tile": "12345"}
     ]
@@ -461,7 +409,7 @@ def test_tiles_for_3d_plotting_resolve():
     assert match.func == tiles_for_3d_plotting
     assert match.kwargs == {"band_number": 1}
 
-def test_tiles_for_3d_plotting(factory, non_staff_user, mocker):
+def test_tiles_for_3d_plotting_success(factory, non_staff_user, mocker):
     expected_tiles=[
             {"tile": 5184},
             {"tile": 5185}

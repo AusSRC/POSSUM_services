@@ -188,6 +188,11 @@ def update_partial_tile_status(request):
 @api_view(["POST"])
 def new_partial_tiles(request, band_number: int):
     try:
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Permission denied"},
+                status=403,
+        )
         field_name = request.data.get("field_name")
         type = request.data.get("type")
         num_sources = request.data.get("num_sources")

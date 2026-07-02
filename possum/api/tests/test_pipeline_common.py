@@ -11,6 +11,7 @@ from ..views.pipeline_common import (
     tiles,
     tiles_observations,
     observations,
+    associated_tiles
 )
 
 User = get_user_model()
@@ -147,3 +148,32 @@ def test_observations_exception(factory, test_user, mocker):
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.data == {"error": "Database error"}
+
+# ----------------------------------------------------------------------
+# associated tiles
+# ----------------------------------------------------------------------
+
+def test_associated_tiles_resolve():
+    match = resolve("/api/common/associated-tiles/ASKAP-54926/")
+    assert match.func == associated_tiles
+    assert match.kwargs == {"sbid": "ASKAP-54926"}
+
+def test_associated_tiles_success(factory, test_user, mocker):
+    expected_rows = (
+        [11274, 11275, 11184],"EMU_0000-60"
+    )
+
+    mocked = mocker.patch(
+        "api.views.pipeline_common.get_associated_tiles",
+        return_value=expected_rows,
+    )
+
+    request = factory.get("/api/common/associated-tiles/ASKAP-12345/")
+    force_authenticate(request, user=test_user)
+    response = associated_tiles(request, "ASKAP-12345")
+
+    mocked.assert_called_once_with("ASKAP-12345")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["tile_list"] == [11274, 11275, 11184]
+    assert response.data["field_name"] == "EMU_0000-60"
