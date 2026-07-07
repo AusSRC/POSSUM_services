@@ -204,10 +204,6 @@ EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = 'possum.database@gmail.com'
 
-# POSSUM portal username and password for Aladin service
-SERVICE_USERNAME = env('SERVICE_USERNAME')
-SERVICE_PASSWORD = env('SERVICE_PASSWORD')
-
 # for api authentication
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
