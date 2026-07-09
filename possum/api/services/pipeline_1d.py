@@ -85,6 +85,7 @@ def update_partial_tile_1d_pipeline_status(
         raise ValueError(
             f"Multiple ({row_num}) rows updated for field {field_name} with tiles {tile_numbers}."
         )
+    return row_num
 
 
 def reset_partial_tile_1d_pipeline(band_number, field_name):
@@ -423,12 +424,12 @@ def get_fields_ready_single_SB_pipeline(band_number):
     Get fields that are ready for 1D Partial Tile pipeline processing:
     i.e. single_sb_1d_pipeline is NULL/empty and cube_state = 'COMPLETED'
 
-    returns a table with columns ["name", "sbid"]
+    returns a table with columns ["name"]
     """
     validate_band_number(band_number)
 
     sql = f"""
-    SELECT name, sbid FROM possum.observation_state_band{band_number}
+    SELECT name FROM possum.observation_state_band{band_number}
     WHERE ("single_sb_1d_pipeline" IS NULL or "single_sb_1d_pipeline" = '')
     AND UPPER("cube_state") = 'COMPLETED';
     """
@@ -521,7 +522,7 @@ def update_1d_pipeline_table(field_name, band_number, status, column_name):
     )
     query = f"""
         UPDATE possum.observation_state_band{band_number}
-        SET "{column_name}" = %s; -- status
+        SET "{column_name}" = %s -- status
         WHERE name = %s; -- field_name
     """
     return execute_update_query(query, (status, field_name),)
@@ -568,9 +569,9 @@ def insert_partial_tiles(field_name, tile1, tile2, tile3, tile4, type, num_sourc
     args = (
             field_name,  # observation
             tile1 if tile1.isdigit() else None,  # tile_1,
-            tile2 if tile2.isdigit() else None,  # tile_2
-            tile3 if tile3.isdigit() else None,  # tile_3
-            tile4 if tile4.isdigit() else None,  # tile_4
+            tile2 if tile2 and tile2.isdigit() else None,  # tile_2
+            tile3 if tile3 and tile3.isdigit() else None,  # tile_3
+            tile4 if tile3 and tile4.isdigit() else None,  # tile_4
             type,  # type
             num_sources if num_sources.isdigit() else None  # number_sources
     )

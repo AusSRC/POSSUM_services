@@ -218,7 +218,7 @@ urlpatterns = [
         name="observations-failed",
     ),
     path(
-        "1d-pipeline/observations/band<int:band_number>/name/<str:name>/",
+        "1d-pipeline/observations/band<int:band_number>/<str:name>/",
         observation_by_name,
         name="observations-by-name",
     ),
@@ -268,7 +268,7 @@ urlpatterns = [
         name="check_running_partial_tile_jobs",
     ),
     path(
-        "1d-pipeline/partial-tiles/failed/band<int:band_number>",
+        "1d-pipeline/partial-tiles/failed/band<int:band_number>/",
         partial_tiles_failed,
         name="check_failed_partial_tile_jobs",
     ),

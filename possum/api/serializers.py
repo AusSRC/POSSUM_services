@@ -11,7 +11,7 @@ class UpdateTileStatusSerializer(serializers.Serializer):
         help_text="List of 4 tile numbers (e.g. [11315, 11316, 11318, 11401]. If tile is empty then use null e.g. [11315, 11316,null,null]"
     )
     status = serializers.CharField(
-        help_text="Status to set for the tiles, e.g. 'Completed'"
+        help_text="Status to set for the tiles, e.g. 'Completed'. Enter '[null]' for null value."
     )
 
 class UpdateTileTimestampSerializer(serializers.Serializer):

@@ -88,7 +88,7 @@ def test_update_3d_pipeline_val_success(factory, admin_user, mocker):
     """
     Test setting 3d_pipeline_val to a value
     """
-    mocker.patch(
+    mocked = mocker.patch(
         "api.views.pipeline_3d.update_3d_pipeline_table",
         return_value=1
     )
@@ -100,7 +100,7 @@ def test_update_3d_pipeline_val_success(factory, admin_user, mocker):
     force_authenticate(request, user=admin_user)
     response = update_3d_pipeline_val(request)
 
-    mocker.assert_called_once_with(
+    mocked.assert_called_once_with(
         tile_number="12345",
         band_number="1",
         status="Completed",
@@ -159,7 +159,7 @@ def test_update_3d_pipeline_ingest_success(factory, admin_user, mocker):
     """
     Test setting 3d_pipeline_ingest to a value
     """
-    mocker.patch(
+    mocked = mocker.patch(
         "api.views.pipeline_3d.update_3d_pipeline_table",
         return_value=1
     )
@@ -171,7 +171,7 @@ def test_update_3d_pipeline_ingest_success(factory, admin_user, mocker):
     force_authenticate(request, user=admin_user)
     response = update_3d_pipeline_ingest(request)
 
-    mocker.assert_called_once_with(
+    mocked.assert_called_once_with(
         tile_number="12345",
         band_number="1",
         status="Completed",

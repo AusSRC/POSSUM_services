@@ -89,7 +89,8 @@ def partial_tiles_ready_for_pipeline(request, band_number: int):
         OpenApiParameter(
             name="skip_boundary_issues",
             type=bool,
-            location=OpenApiParameter.QUERY
+            location=OpenApiParameter.QUERY,
+            description="True if we want to skip boundary issues. Default is False."
         ),
     ]
 )
@@ -124,7 +125,7 @@ def partial_tiles_by_observation_name(request, band_number: int, field_name: str
             name="crosses_centre",
             type=bool,
             location=OpenApiParameter.QUERY,
-            description="If true, only return observations whose type starts with 'center - crosses'."
+            description="If true, only return observations whose type starts with 'center - crosses'. Default is false."
         ),
     ]
 )
@@ -184,7 +185,27 @@ def update_partial_tile_status(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
-
+@extend_schema(
+    summary="Insert partial tiles into the database",
+    parameters=[
+                    OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.PATH, required=True,
+                                    description="Band number (1 or 2)"),
+                    OpenApiParameter(name="field_name", type=str, location=OpenApiParameter.QUERY, required=True,
+                                    description="Observation field name"),
+                    OpenApiParameter(name="type", type=str, location=OpenApiParameter.QUERY, required=True,
+                                    description="e.g. corner, edge etc."),
+                    OpenApiParameter(name="num_sources", type=str, location=OpenApiParameter.QUERY, required=True,
+                                    description="Number of sources in the field"),         
+                    OpenApiParameter(name="tile1", type=str, location=OpenApiParameter.QUERY, required=True,
+                                    description="Tile 1 number"),
+                    OpenApiParameter(name="tile2", type=str, location=OpenApiParameter.QUERY, required=False,
+                                    description="Tile 2 number (or leave empty for None)"),
+                    OpenApiParameter(name="tile3", type=str, location=OpenApiParameter.QUERY, required=False,
+                                    description="Tile 3 number (or leave empty for None)"),
+                    OpenApiParameter(name="tile4", type=str, location=OpenApiParameter.QUERY, required=False,
+                                    description="Tile 4 number (or leave empty for None)"),                    
+               ]
+)
 @api_view(["POST"])
 def new_partial_tiles(request, band_number: int):
     try:
@@ -193,13 +214,13 @@ def new_partial_tiles(request, band_number: int):
                 {"error": "Permission denied"},
                 status=403,
         )
-        field_name = request.data.get("field_name")
-        type = request.data.get("type")
-        num_sources = request.data.get("num_sources")
-        tile1 = request.data.get("tile1")
-        tile2 = request.data.get("tile2")
-        tile3 = request.data.get("tile3")
-        tile4 = request.data.get("tile4")
+        field_name = request.query_params.get("field_name")
+        type = request.query_params.get("type")
+        num_sources = request.query_params.get("num_sources")
+        tile1 = request.query_params.get("tile1")
+        tile2 = request.query_params.get("tile2")
+        tile3 = request.query_params.get("tile3")
+        tile4 = request.query_params.get("tile4")
         data = insert_partial_tiles(
                 field_name = field_name,
                 tile1 = tile1, tile2 = tile2, tile3 = tile3, tile4 = tile4,
@@ -215,13 +236,13 @@ def new_partial_tiles(request, band_number: int):
 @extend_schema(
     summary="Check fields by observation name",
     parameters=[
-        OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.QUERY, required=True,
+        OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.PATH, required=True,
                          description="Band number (1 or 2)"),
-        OpenApiParameter(name="name", type=str, location=OpenApiParameter.QUERY, required=True),
+        OpenApiParameter(name="name", type=str, location=OpenApiParameter.PATH, required=True),
     ]
 )
 @api_view(["GET"])
-def observation_by_name(request,  band_number: int, name: str):
+def observation_by_name(request, band_number, name):
     """
     ## Check fields by observation name
     """
@@ -237,7 +258,7 @@ def observation_by_name(request,  band_number: int, name: str):
 @extend_schema(
     summary="## Check fields where validation / summary plot failed",
     parameters=[
-        OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.QUERY, required=True,
+        OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.PATH, required=True,
                          description="Band number (1 or 2)")
     ]
 )
@@ -489,7 +510,7 @@ def update_single_sb_1d_pipeline(request):
     ]
 )
 @api_view(["POST"])
-def clear_partial_tile_1d_pipeline(request ):
+def clear_partial_tile_1d_pipeline(request):
     try:
         if not request.user.is_staff:
             return Response(
@@ -550,7 +571,12 @@ def update_1d_pipeline_validation(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-@extend_schema(summary="Clear the validation flag for failed observation_state rows")    
+@extend_schema(summary="Clear the validation flag for failed observation_state rows",
+               parameters=[
+                   OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.QUERY, required=True,
+                                    description="Band number (1 or 2)"),
+               ]
+)    
 @api_view(["POST"])
 def reset_failed_1d_pipeline_validation(request):
     """
@@ -576,7 +602,12 @@ def reset_failed_1d_pipeline_validation(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-@extend_schema(summary="## Update ALL failed jobs to set 1d_pipeline_validation to null")    
+@extend_schema(summary="## Update ALL failed jobs to set 1d_pipeline_validation to null",
+               parameters=[
+                   OpenApiParameter(name="band_number", type=int, location=OpenApiParameter.QUERY, required=True,
+                                    description="Band number (1 or 2)"),
+               ]
+)    
 @api_view(["POST"])
 def reset_failed_1d_pipeline(request):
     """

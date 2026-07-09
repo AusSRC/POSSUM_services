@@ -34,7 +34,7 @@ from ..services.pipeline_3d import (
 @api_view(["GET"])
 def tiles_that_had_processing_started(request, band_number):
     try:
-        tile_id = request.GET.get("tile_id")
+        tile_id = request.query_params.get("tile_number")
         tiles = get_tiles_that_had_processing_started(band_number, tile_id)
         return Response(tiles)
     except Exception as e:
@@ -59,7 +59,7 @@ def tiles_order_by_3d_pipeline_val(request, band_number):
 @extend_schema(summary="Select tiles where ingest running",
                parameters=[
                    OpenApiParameter(name="order_by_3d_pipeline_ingest", type=bool, location=OpenApiParameter.QUERY, required=False,
-                         description="If true, return results ordered by 3d_pipeline_ingest")
+                         description="If true, return results ordered by 3d_pipeline_ingest. Default is False.")
                ])
 @api_view(["GET"])
 def tiles_for_ingest_running(request, band_number):
@@ -135,13 +135,13 @@ def tiles_where_validation_link_doesnt_exist(request, band_number):
 @extend_schema(summary="Select tiles where ingest failed",
                parameters=[
                    OpenApiParameter(name="order_by_3d_pipeline_ingest", type=bool, location=OpenApiParameter.QUERY, required=False,
-                         description="If true, return results ordered by 3d_pipeline_ingest")
+                         description="If true, return results ordered by 3d_pipeline_ingest. Default is False.")
                ])
 @api_view(["GET"])
 def tiles_where_ingest_failed(request, band_number):
     try:
         ordered = request.GET.get("order_by_3d_pipeline_ingest", "").lower() == "true"
-        tiles = get_tiles_with_filter(band_number, order_by_3d_pipeline_ingest=ordered)
+        tiles = get_tiles_with_filter(band_number, "3d_pipeline_ingest", "IngestFailed", order_by_3d_pipeline_ingest=ordered)
         return Response(tiles)
     
     except Exception as e:
