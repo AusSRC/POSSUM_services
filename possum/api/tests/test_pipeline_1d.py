@@ -365,7 +365,7 @@ def test_get_full_single_sb_pipeline_table_success(factory, non_staff_user, mock
 #----- Update observations table tests -----
 
 def test_update_1d_pipeline_validation_resolve():
-    match = resolve("/api/1d-pipeline/observations/update/1d-pipeline-validation/")
+    match = resolve("/api/1d-pipeline/observations/update/1d_pipeline_validation/")
     assert match.func == update_1d_pipeline_validation
 
 def test_update_1d_pipeline_validation_success(factory, admin_user, mocker):
@@ -377,7 +377,7 @@ def test_update_1d_pipeline_validation_success(factory, admin_user, mocker):
         return_value=1
     )
     
-    request = factory.patch("/api/1d-pipeline/observations/update/1d-pipeline-validation/?"
+    request = factory.patch("/api/1d-pipeline/observations/update/1d_pipeline_validation/?"
                             "band_number=1&"
                             "field_name=EMU_1748-64&"
                             "status=Completed")
@@ -395,7 +395,7 @@ def test_update_1d_pipeline_validation_success(factory, admin_user, mocker):
     assert response.data.get("rows_updated") == 1
 
 def test_update_single_sb_1d_pipeline_resolve():
-    match = resolve("/api/1d-pipeline/observations/update/single-sb-1d-pipeline/")
+    match = resolve("/api/1d-pipeline/observations/update/single_sb_1d_pipeline/")
     assert match.func == update_single_sb_1d_pipeline
 
 def test_update_single_sb_1d_pipeline_success(factory, admin_user, mocker):
@@ -406,7 +406,7 @@ def test_update_single_sb_1d_pipeline_success(factory, admin_user, mocker):
         "api.views.pipeline_1d.update_1d_pipeline_table",
         return_value=1
     )
-    request = factory.patch("/api/1d-pipeline/observations/update/single-sb-1d-pipeline/?"
+    request = factory.patch("/api/1d-pipeline/observations/update/single_sb_1d_pipeline/?"
                             "band_number=1&"
                             "field_name=EMU_1748-64&"
                             "status=Completed")
@@ -431,7 +431,7 @@ def test_update_single_sb_1d_pipeline_null(factory, admin_user, mocker):
         "api.views.pipeline_1d.update_1d_pipeline_table",
         return_value=1
     )
-    request = factory.patch("/api/1d-pipeline/observations/update/single-sb-1d-pipeline/?"
+    request = factory.patch("/api/1d-pipeline/observations/update/single_sb_1d_pipeline/?"
                             "band_number=1&"
                             "field_name=EMU_1748-64")
     force_authenticate(request, user=admin_user)
