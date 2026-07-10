@@ -1,5 +1,5 @@
 import pytest
-
+from urllib.parse import urlencode
 from django.contrib.auth import get_user_model
 from django.urls import resolve
 from rest_framework import status
@@ -260,15 +260,14 @@ def test_new_partial_tiles_non_admin(factory, non_staff_user):
     """
     Test new_partial_tiles with non staff admin
     """
-    request = factory.post("/api/1d-pipeline/partial-tiles/new/band1/?"
-                            "field_name=EMU_1748-64&"
-                            "tile1=11726&"
-                            "tile2=11727&"
-                            "tile3=11791&"
-                            "tile4=11792&"
-                            "type=corner%20-%20crosses projection boundary!&"
-                            "num_sources=2"
-    )
+    params = urlencode({
+           "field_name": 'EMU_1748-64',
+           "tile1": '11726',
+           "tile2": '11727',
+           "type": 'corner - crosses projection boundary!',
+           "num_sources": 2,
+    })  
+    request = factory.post(f"/api/1d-pipeline/partial-tiles/new/band1/?{params}")
     force_authenticate(request, user=non_staff_user)
     response = new_partial_tiles(request, 1)
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -281,15 +280,17 @@ def test_new_partial_tiles_success(factory, admin_user, mocker):
         "api.views.pipeline_1d.insert_partial_tiles",
         return_value=1
     )
-    request = factory.post("/api/1d-pipeline/partial-tiles/new/band1/?"
-                            "field_name=EMU_1748-64&"
-                            "tile1=11726&"
-                            "tile2=11727&"
-                            "tile3=11791&"
-                            "tile4=11792&"
-                            "type=corner%20-%20crosses projection boundary!&"
-                            "num_sources=2"
-    )
+    params = urlencode({
+           "field_name": 'EMU_1748-64',
+           "tile1": '11726',
+           "tile2": '11727',
+           "tile3": '11791',
+           "tile4": '11792',
+           "type": 'corner - crosses projection boundary!',
+           "num_sources": 2,
+    })  
+    request = factory.post(f"/api/1d-pipeline/partial-tiles/new/band1/?{params}")
+
     force_authenticate(request, user=admin_user)
     response = new_partial_tiles(request, 1)
     mocked.assert_called_once_with(

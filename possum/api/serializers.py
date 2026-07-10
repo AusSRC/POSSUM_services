@@ -7,7 +7,7 @@ class UpdateTileStatusSerializer(serializers.Serializer):
     )
     field_name = serializers.CharField()
     tile_numbers = serializers.ListField(
-        child=serializers.CharField(allow_null=True),
+        child=serializers.CharField(allow_null=True, allow_blank=True),
         help_text="List of 4 tile numbers (e.g. [11315, 11316, 11318, 11401]. If tile is empty then use null e.g. [11315, 11316,null,null]"
     )
     status = serializers.CharField(

@@ -193,12 +193,12 @@ urlpatterns = [
         name="observation-state-band-reset-1d-pipeline"
     ),    
     path(
-        "1d-pipeline/observations/update/single-sb-1d-pipeline/",
+        "1d-pipeline/observations/update/single_sb_1d_pipeline/",
         update_single_sb_1d_pipeline,
         name="observation-state-band-update-single-sb-1d-pipeline"
     ),
     path(
-        "1d-pipeline/observations/update/1d-pipeline-validation/",
+        "1d-pipeline/observations/update/1d_pipeline_validation/",
         update_1d_pipeline_validation,
         name="observation-state-band-update-1d-pipeline-validation"
     ),
