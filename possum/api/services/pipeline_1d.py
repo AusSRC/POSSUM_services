@@ -429,9 +429,11 @@ def get_fields_ready_single_SB_pipeline(band_number):
     validate_band_number(band_number)
 
     sql = f"""
-    SELECT name FROM possum.observation_state_band{band_number}
-    WHERE ("single_sb_1d_pipeline" IS NULL or "single_sb_1d_pipeline" = '')
-    AND UPPER("cube_state") = 'COMPLETED';
+    SELECT osb.name, o.sbid FROM possum.observation_state_band{band_number} osb
+    JOIN possum.observation AS o
+    ON osb.name = o.name
+    WHERE (osb."single_sb_1d_pipeline" IS NULL or osb."single_sb_1d_pipeline" = '')
+    AND UPPER(osb."cube_state") = 'COMPLETED';
     """
     return execute_query(sql)
 
