@@ -40,7 +40,9 @@ INSTALLED_APPS = [
     'sslserver',
     'social_django',
     'survey',
-    'processing_states'
+    'processing_states',
+    'rest_framework',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -201,3 +203,22 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = env('EMAIL_HOST_USER') 
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = 'possum.database@gmail.com'
+
+# for api authentication
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticated",
+    ),
+    # for api docs generation
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# for api docs generation
+SPECTACULAR_SETTINGS = {
+    "TITLE": "POSSUM Pipeline API",
+    "DESCRIPTION": "API for POSSUM 1D and 3D pipeline operations",
+    "VERSION": "1.0.0",
+}
